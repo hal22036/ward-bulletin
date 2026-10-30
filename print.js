@@ -22,8 +22,32 @@ window.makePdf = async function () {
   entry(p,'Presiding',data.presiding,108);entry(p,'Conducting',data.conducting,139);paragraph(p,data.welcomeNotes??'Welcome and Announcements',19,161,274,22,12);
   hymn(p,'Opening Hymn',data.opening,185);entry(p,'Invocation',data.invocation,220);paragraph(p,data.wardStakeNotes??'Ward/Stake Items',19,244,274,27,12);
   rule(p,20,274,272,gold,3);hymn(p,'Sacrament Hymn',data.sacrament,279);text(p,'Administration of the Sacrament',19,314,11.5);rule(p,20,333,272,gold,3);
-  const programLines=lines(data.program,11.5,270);if(programLines.length===1){const title=programLines[0],width=font.widthOfTextAtSize(title,11.5);const dots='.'.repeat(Math.max(0,Math.floor((268-width-16)/2/font.widthOfTextAtSize('.',11.5))));centered(p,dots+'  '+title+'  '+dots,19,376,274,11.5)}else paragraph(p,data.program,21,354,270,65,11.5);
-  hymn(p,'Closing Hymn',data.closing,427);entry(p,'Benediction',data.benediction,492);
+  // Share the available space between visible program items and closing items.
+  const items=[];
+  let options=null;try{options=JSON.parse(data.programOptions)}catch{}
+  if(options&&Array.isArray(options.speakers)){
+    if(options.fast)items.push({kind:'center',value:'Fast and Testimony Meeting'});
+    if(options.showSpeakers)for(const speaker of options.speakers){
+      if(speaker.show!==false&&String(speaker.name||'').trim())items.push({kind:'entry',label:speaker.type||'Speaker',value:speaker.name});
+    }
+    if(options.showNotes!==false&&options.notes?.trim())items.push({kind:'notes',value:options.notes});
+  }else if(data.program?.trim())items.push({kind:'notes',value:data.program});
+  items.push({kind:'hymn',label:'Closing Hymn',value:data.closing});
+  items.push({kind:'entry',label:'Benediction',value:data.benediction});
+  for(const item of items){
+    item.height=item.kind==='notes'?lines(item.value,11.5,270).length*13.8:item.kind==='hymn'&&/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i.test(item.value)?30:15;
+  }
+  const top=345,bottom=551,total=items.reduce((sum,item)=>sum+item.height,0);
+  if(total>bottom-top)throw Error('Too many program items to fit clearly. Shorten notes or hide an item before downloading.');
+  const gap=items.length>1?(bottom-top-total)/(items.length-1):0;
+  let programY=top;
+  for(const item of items){
+    if(item.kind==='entry')entry(p,item.label,item.value,programY);
+    else if(item.kind==='hymn')hymn(p,item.label,item.value,programY);
+    else if(item.kind==='center')centered(p,item.value,19,programY,274,11.5);
+    else paragraph(p,item.value,21,programY,270,item.height+1,11.5,font,11.5);
+    programY+=item.height+gap;
+  }
   // Information panel. Pipe-separated rows make the three columns editable.
   rect(p,347,17,298,164,null,black,1.8);centered(p,'Ward Leadership',353,20,286,12,bold);
   const leadership=data.leadership.split('\n').filter(Boolean);const rowSize=Math.min(8.1,135/(leadership.length*1.18));if(rowSize<7)throw Error('Ward leadership has too many rows.');leadership.forEach((line,i)=>{const cols=line.includes('|')?line.split('|'):line.split(/\s+[—–]\s+/);const y=40+i*rowSize*1.18;paragraph(p,cols[0].trim(),355,y,108,rowSize*1.3,rowSize,font,rowSize);if(cols[1])paragraph(p,cols[1].trim(),466,y,103,rowSize*1.3,rowSize,font,rowSize);if(cols[2])text(p,cols[2].trim(),576,y,rowSize)});
