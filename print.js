@@ -27,8 +27,11 @@ window.makePdf = async function () {
   let options=null;try{options=JSON.parse(data.programOptions)}catch{}
   if(options&&Array.isArray(options.speakers)){
     if(options.fast)items.push({kind:'center',value:'Fast and Testimony Meeting'});
-    if(options.showSpeakers)for(const speaker of options.speakers){
-      if(speaker.show!==false&&String(speaker.name||'').trim())items.push({kind:'entry',label:speaker.type||'Speaker',value:speaker.name});
+    const speakers=options.showSpeakers?options.speakers.filter(speaker=>speaker.show!==false&&String(speaker.name||'').trim()):[];
+    const hymns=typeof readExtraHymns==='function'?readExtraHymns().filter(h=>h.show&&(h.number.trim()||h.name.trim())):[];
+    for(let position=0;position<=speakers.length;position++){
+      if(position>0){const speaker=speakers[position-1];items.push({kind:'entry',label:speaker.type||'Speaker',value:speaker.name});}
+      for(const hymn of hymns.filter(h=>Math.min(h.after,speakers.length)===position))items.push({kind:'hymn',label:hymn.label||'Hymn',value:hymn.number?'Hymn '+hymn.number+(hymn.name?' · '+hymn.name:''):hymn.name});
     }
     if(options.showNotes!==false&&options.notes?.trim())items.push({kind:'notes',value:options.notes});
   }else if(data.program?.trim())items.push({kind:'notes',value:data.program});
