@@ -20,8 +20,8 @@ window.makePdf = async function () {
   // Program panel: same positions and visual hierarchy as the reference.
   const p=pages[1];centered(p,data.ward,16,25,290,23);centered(p,'Sacrament Meeting',16,54,290,22);centered(p,dateText(),16,80,290,18);
   entry(p,'Presiding',data.presiding,108);entry(p,'Conducting',data.conducting,139);paragraph(p,data.welcomeNotes??'Welcome and Announcements',19,161,274,22,12);
-  hymn(p,'Opening Hymn',data.opening,185);entry(p,'Invocation',data.invocation,220);paragraph(p,data.wardStakeNotes??'Ward/Stake Items',19,244,274,27,12);
-  rule(p,20,274,272,gold,3);hymn(p,'Sacrament Hymn',data.sacrament,279);text(p,'Administration of the Sacrament',19,314,11.5);rule(p,20,333,272,gold,3);
+  if(typeof hymnIsVisible!=='function'||hymnIsVisible('opening'))hymn(p,'Opening Hymn',data.opening,185);entry(p,'Invocation',data.invocation,220);paragraph(p,data.wardStakeNotes??'Ward/Stake Items',19,244,274,27,12);
+  rule(p,20,274,272,gold,3);if(typeof hymnIsVisible!=='function'||hymnIsVisible('sacrament'))hymn(p,'Sacrament Hymn',data.sacrament,279);text(p,'Administration of the Sacrament',19,314,11.5);rule(p,20,333,272,gold,3);
   // Share the available space between visible program items and closing items.
   const items=[];
   let options=null;try{options=JSON.parse(data.programOptions)}catch{}
@@ -35,7 +35,7 @@ window.makePdf = async function () {
     }
     if(options.showNotes!==false&&options.notes?.trim())items.push({kind:'notes',value:options.notes});
   }else if(data.program?.trim())items.push({kind:'notes',value:data.program});
-  items.push({kind:'hymn',label:'Closing Hymn',value:data.closing});
+  if(typeof hymnIsVisible!=='function'||hymnIsVisible('closing'))items.push({kind:'hymn',label:'Closing Hymn',value:data.closing});
   items.push({kind:'entry',label:'Benediction',value:data.benediction});
   for(const item of items){
     item.height=item.kind==='notes'?lines(item.value,11.5,270).length*13.8:item.kind==='hymn'&&/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i.test(item.value)?30:15;
