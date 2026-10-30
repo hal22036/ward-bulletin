@@ -19,8 +19,8 @@ window.makePdf = async function () {
   function hymn(p,label,value,top){const m=value.match(/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i);entry(p,label,m?m[1]:value,top);if(m)centered(p,'“'+m[2]+'”',19,top+14,274,11.5)}
   // Program panel: same positions and visual hierarchy as the reference.
   const p=pages[1];centered(p,data.ward,16,25,290,23);centered(p,'Sacrament Meeting',16,54,290,22);centered(p,dateText(),16,80,290,18);
-  entry(p,'Presiding',data.presiding,108);entry(p,'Conducting',data.conducting,139);text(p,'Welcome and Announcements',19,161,12);
-  hymn(p,'Opening Hymn',data.opening,185);entry(p,'Invocation',data.invocation,220);text(p,'Ward/Stake Items',19,244,12);
+  entry(p,'Presiding',data.presiding,108);entry(p,'Conducting',data.conducting,139);paragraph(p,data.welcomeNotes??'Welcome and Announcements',19,161,274,22,12);
+  hymn(p,'Opening Hymn',data.opening,185);entry(p,'Invocation',data.invocation,220);paragraph(p,data.wardStakeNotes??'Ward/Stake Items',19,244,274,27,12);
   rule(p,20,274,272,gold,3);hymn(p,'Sacrament Hymn',data.sacrament,279);text(p,'Administration of the Sacrament',19,314,11.5);rule(p,20,333,272,gold,3);
   const programLines=lines(data.program,11.5,270);if(programLines.length===1){const title=programLines[0],width=font.widthOfTextAtSize(title,11.5);const dots='.'.repeat(Math.max(0,Math.floor((268-width-16)/2/font.widthOfTextAtSize('.',11.5))));centered(p,dots+'  '+title+'  '+dots,19,376,274,11.5)}else paragraph(p,data.program,21,354,270,65,11.5);
   hymn(p,'Closing Hymn',data.closing,427);entry(p,'Benediction',data.benediction,492);
