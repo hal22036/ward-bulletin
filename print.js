@@ -128,7 +128,7 @@ window.makePdf = async function (settings={}) {
   footer.quoteRows.forEach((line,i)=>centered(p,line,705,footer.quoteTop+i*footer.quoteSize*1.2,283,footer.quoteSize,italic));
   footer.wardRows.forEach((line,i)=>centered(p,line,685,footer.wardTop+i*footer.wardSize*1.2,315,footer.wardSize));
   footer.stakeRows.forEach((line,i)=>centered(p,line,685,footer.stakeTop+i*footer.stakeSize*1.2,315,footer.stakeSize));
-  if(showQr){await picture(p,data.coverQr,823,footer.qrTop,55,55);centered(p,'Scan for more',794,footer.qrTop+57,113,8,italic);}
+  if(showQr){await picture(p,data.coverQr,823,footer.qrTop,55,55);centered(p,'Scan me',823,footer.qrTop+57,55,8,italic);p.drawSvgPath('M 0 0 C 12 0 16 -8 14 -20 M 8 -15 L 14 -20 L 19 -13',{x:879,y:612-(footer.qrTop+64),borderColor:black,borderWidth:1.1});}
   // Announcements keep their own column and the calendar occupies two panels.
   const a=pages[0];rounded(a,10,33,323,559,18);centered(a,'ANNOUNCEMENTS',17,37,309,22,bold);
   const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});if(letter){const first=calendarWindow().through;const future=events().filter(e=>e.date>dateKey(first));if(future.length)notices.push({title:'Future events',body:future.map(futureEventText).join(' / '),icon:''});}let y=69;
