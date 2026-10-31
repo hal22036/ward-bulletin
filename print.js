@@ -142,19 +142,19 @@ window.makePdf = async function (settings={}) {
     const tokenize=(value,f)=>clean(value||'').replace(/\r\n?/g,'\n').split(/(\n)/).flatMap(part=>part==='\n'?[{br:true}]:part.split(/\s+/).filter(Boolean).map(t=>({t,f})));
     const tokens=[...tokenize(n.title,titleFace),...tokenize(n.body,bodyFace)];let yy=0,xx=0,runs=[];
     for(const token of tokens){if(token.br){yy+=size*1.16;xx=0;continue;}const {t,f}=token;let chunk='';const chunks=[];for(const ch of t){if(f.widthOfTextAtSize(chunk+ch,size)>w&&chunk){chunks.push(chunk);chunk='';}chunk+=ch;}chunks.push(chunk);chunks.forEach((part,i)=>{const tw=f.widthOfTextAtSize(part+(i===chunks.length-1?' ':''),size);if(xx+tw>w&&xx>0){yy+=size*1.16;xx=0;}runs.push({t:part,f,xx,yy});xx+=tw;});}
-    return {art,x,runs,size,height:Math.max(art!=null?33:0,yy+size*1.16)+9};
+    const textHeight=yy+size*1.16,contentHeight=Math.max(art!=null?33:0,textHeight);return {art,x,runs,size,height:contentHeight+9,iconOffset:(contentHeight-33)/2,textOffset:(contentHeight-textHeight)/2};
   }
   let size=10.3;while(size>8.5&&notices.reduce((v,n)=>v+noticePlan(n,size).height,0)>newsHeight)size=Math.max(8.5,size-.1);
   if(notices.reduce((v,n)=>v+noticePlan(n,size).height,0)>newsHeight)throw Error('Announcements'+(letter?' and future events':'')+' are too full to print clearly. Shorten or hide an item.');if(size<9)warnings.push('Announcements use smaller text');if(size<10.2&&notices.some(n=>n.fontSize))warnings.push('Announcement text scaled to fit');
   const extraGap=Math.min(14,Math.max(0,(newsHeight-notices.reduce((v,n)=>v+noticePlan(n,size).height,0))/Math.max(1,notices.length)));
-  for(const n of notices){const plan=noticePlan(n,size);if(plan.art!=null)await picture(a,(String(plan.art).startsWith('data:image/')?plan.art:generalIcons[String(plan.art)]?`assets/icons/${generalIcons[String(plan.art)]}.png`:/^\d+$/.test(String(plan.art))?`assets/art-${plan.art}.png`:`assets/${plan.art}.png`),16,y+2,38,33);for(const r of plan.runs)text(a,r.t,plan.x+r.xx,y+r.yy,plan.size,r.f);y+=plan.height+extraGap;}
+  for(const n of notices){const plan=noticePlan(n,size);if(plan.art!=null)await picture(a,(String(plan.art).startsWith('data:image/')?plan.art:generalIcons[String(plan.art)]?`assets/icons/${generalIcons[String(plan.art)]}.png`:/^\d+$/.test(String(plan.art))?`assets/art-${plan.art}.png`:`assets/${plan.art}.png`),16,y+plan.iconOffset,38,33);for(const r of plan.runs)text(a,r.t,plan.x+r.xx,y+plan.textOffset+r.yy,plan.size,r.f);y+=plan.height+extraGap;}
   if(y>contactTop)throw Error('Announcements are too close to the contact footer. Shorten or hide an item.');
   if(contact){rule(a,10,contactTop,323,rgb(.32,.2,.5));contactRows.forEach((line,i)=>text(a,line,35,contactTop+4+i*contactSize*1.2,contactSize,italic));}
   if(!letter){
   const range=calendarWindow(),first=range.from,rows=5,x0=366,calW=622,cw=calW/7,gridTop=129,ch=436/rows,dates=Array.from({length:35},(_,i)=>{const date=new Date(first);date.setDate(first.getDate()+i);return date;});
   const monthHeading=[...new Set(dates.map(date=>date.toLocaleDateString('en-US',{month:'long'})))].join('/');rect(a,364,56,626,35,gray,gray);centered(a,monthHeading,366,57,622,25,bold);
-  ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'].forEach((day,i)=>{rect(a,x0+i*cw,106,cw,23);centered(a,day,x0+i*cw+2,109,cw-4,12)});
-  const allEvents=events();for(let i=0;i<rows*7;i++){const date=dates[i],key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,x=x0+i%7*cw,top=gridTop+Math.floor(i/7)*ch;rect(a,x,top,cw,ch);text(a,String(date.getDate()),x+5,top+1,12);if(date.getDate()===1)text(a,date.toLocaleDateString('en-US',{month:'long'}).toUpperCase(),x+15,top+4,8,bold);const ee=allEvents.filter(e=>e.date===key),bodyX=x+4,bodyTop=top+17,bodyWidth=cw-8,bodyHeight=ch-20;
+  ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'].forEach((day,i)=>{centered(a,day,x0+i*cw+2,109,cw-4,12)});
+  const allEvents=events();for(let i=0;i<rows*7;i++){const date=dates[i],key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,x=x0+i%7*cw,top=gridTop+Math.floor(i/7)*ch;text(a,String(date.getDate()),x+5,top+1,12);if(date.getDate()===1)text(a,date.toLocaleDateString('en-US',{month:'long'}).toUpperCase(),x+15,top+4,8,bold);const ee=allEvents.filter(e=>e.date===key),bodyX=x+4,bodyTop=top+17,bodyWidth=cw-8,bodyHeight=ch-20;
     const iconEvents=ee.filter(e=>e.art!=null),textEvents=ee.filter(e=>e.art==null).map(e=>({event:e,rows:lines(e.text,7.5,cw-9)})),textHeight=textEvents.reduce((sum,e)=>sum+e.rows.length*8+2,0),iconHeight=bodyHeight-textHeight-(textEvents.length&&iconEvents.length?3:0);
     if(textHeight>bodyHeight)throw Error('Too many events in calendar day '+key+'. Shorten event names or hide an item.');
     if(iconEvents.length){
@@ -176,11 +176,17 @@ window.makePdf = async function (settings={}) {
   }
 
 
+  // Draw the complete grid once, above artwork, so every edge has the same solid stroke.
+  const gridBottom=gridTop+rows*ch,gridPath=[`M 0 0 H ${calW} V ${gridBottom-106} H 0 Z`];
+  for(let col=1;col<7;col++)gridPath.push(`M ${col*cw} 0 V ${gridBottom-106}`);
+  for(let row=0;row<rows;row++)gridPath.push(`M 0 ${gridTop-106+row*ch} H ${calW}`);
+  a.drawSvgPath(gridPath.join(' '),{x:x0,y:612-106,borderColor:rgb(0,0,0),borderWidth:1});
+
   if(data.monthBorderMode!=='off'){
     const monthKey=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0'),keys=dates.map(monthKey),counts={};keys.forEach(key=>counts[key]=(counts[key]||0)+1);const mainMonth=Object.keys(counts).reduce((best,key)=>counts[key]>counts[best]?key:best),smallMonths=Object.keys(counts).filter(key=>key!==mainMonth);
     const fallback=/^#[0-9a-f]{6}$/i.test(data.monthBorderColor||'')?data.monthBorderColor:'#b85432';
     for(let i=0;i<dates.length;i++)if(keys[i]!==mainMonth){const key=keys[i],saved=(data.monthBorderColors||{})[key],hex=/^#[0-9a-f]{6}$/i.test(saved||'')?saved:smallMonths.indexOf(key)>0?'#416d91':fallback,border=data.monthBorderMode==='color'?rgb(parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255):black;
-      const edge=(x1,t1,x2,t2)=>a.drawLine({start:{x:x1,y:612-t1},end:{x:x2,y:612-t2},color:border,thickness:2.5});
+      const edge=(x1,t1,x2,t2)=>a.drawLine({start:{x:x1,y:612-t1},end:{x:x2,y:612-t2},color:border,thickness:2.5,lineCap:2});
       const row=Math.floor(i/7),col=i%7,x=x0+col*cw,top=gridTop+row*ch;if(row===0||keys[i-7]!==key)edge(x,top,x+cw,top);if(row===4||keys[i+7]!==key)edge(x,top+ch,x+cw,top+ch);if(col===0||keys[i-1]!==key)edge(x,top,x,top+ch);if(col===6||keys[i+1]!==key)edge(x+cw,top,x+cw,top+ch);
     }
   }
