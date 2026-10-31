@@ -41,7 +41,7 @@ async function refresh() {
     paper.replaceChildren(canvas);
     paper.removeAttribute('data-stale');
     paper.setAttribute('aria-busy', 'false');
-    message.textContent = 'Showing the actual PDF · Page ' + pageNumber + ' of 2';
+    message.textContent = 'Showing the actual PDF · Page ' + pageNumber + ' of 2' + (result.warnings.length ? ' · ' + result.warnings.join('; ') : '');
   } catch (error) {
     if (current !== revision) return;
     paper.setAttribute('aria-busy', 'false');
