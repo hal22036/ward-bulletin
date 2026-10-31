@@ -158,18 +158,18 @@ window.makePdf = async function (settings={}) {
     const iconEvents=ee.filter(e=>e.art!=null),textEvents=ee.filter(e=>e.art==null).map(e=>({event:e,rows:lines(e.text,7.5,cw-9)})),textHeight=textEvents.reduce((sum,e)=>sum+e.rows.length*8+2,0),iconHeight=bodyHeight-textHeight-(textEvents.length&&iconEvents.length?3:0);
     if(textHeight>bodyHeight)throw Error('Too many events in calendar day '+key+'. Shorten event names or hide an item.');
     if(iconEvents.length){
-      const gap=3,hasTimes=iconEvents.some(e=>e.calendarText!=='no'&&calendarTime(e.time)),timeBand=hasTimes?9:0,minTimeWidth=Math.max(0,...iconEvents.map(e=>font.widthOfTextAtSize(e.calendarText==='no'?'':calendarTime(e.time),6.5)));
+      const gap=3,stacked=iconEvents.length<=4,sideTimes=stacked&&iconEvents.length>1,hasTimes=iconEvents.some(e=>e.calendarText!=='no'&&calendarTime(e.time)),timeBand=hasTimes&&!sideTimes?9:0,minTimeWidth=Math.max(0,...iconEvents.map(e=>font.widthOfTextAtSize(e.calendarText==='no'?'':calendarTime(e.time),6.5)));
       let layout=null;
-      for(let cols=1;cols<=iconEvents.length;cols++){
-        const rowCount=Math.ceil(iconEvents.length/cols),tileWidth=(bodyWidth-gap*(cols-1))/cols,tileHeight=(iconHeight-gap*(rowCount-1))/rowCount,score=Math.min(tileWidth,tileHeight-timeBand);
+      for(let cols=stacked?1:Math.ceil(iconEvents.length/4);cols<=(stacked?1:iconEvents.length);cols++){
+        const rowCount=Math.ceil(iconEvents.length/cols),tileWidth=(bodyWidth-gap*(cols-1))/cols,tileHeight=(iconHeight-gap*(rowCount-1))/rowCount,score=Math.min(tileWidth-(sideTimes&&hasTimes?minTimeWidth+3:0),tileHeight-timeBand);
         if(tileWidth>=minTimeWidth&&(!layout||score>layout.score))layout={cols,rowCount,tileWidth,tileHeight,score};
       }
-      if(!layout||layout.score<14)throw Error('Too many icon events in calendar day '+key+'. Hide an item or use shorter text-only entries.');
+      if(!layout||layout.score<(stacked?12:14))throw Error('Too many icon events in calendar day '+key+'. Hide an item or use shorter text-only entries.');
       for(let eventIndex=0;eventIndex<iconEvents.length;eventIndex++){
-        const event=iconEvents[eventIndex],row=Math.floor(eventIndex/layout.cols),col=eventIndex%layout.cols,countInRow=Math.min(layout.cols,iconEvents.length-row*layout.cols),rowWidth=countInRow*layout.tileWidth+(countInRow-1)*gap,tileX=bodyX+(bodyWidth-rowWidth)/2+col*(layout.tileWidth+gap),tileTop=bodyTop+row*(layout.tileHeight+gap),time=event.calendarText==='no'?'':calendarTime(event.time),pictureHeight=layout.tileHeight-(time?9:0),art=event.art;
+        const event=iconEvents[eventIndex],row=Math.floor(eventIndex/layout.cols),col=eventIndex%layout.cols,countInRow=Math.min(layout.cols,iconEvents.length-row*layout.cols),rowWidth=countInRow*layout.tileWidth+(countInRow-1)*gap,tileX=bodyX+(bodyWidth-rowWidth)/2+col*(layout.tileWidth+gap),tileTop=bodyTop+row*(layout.tileHeight+gap),time=event.calendarText==='no'?'':calendarTime(event.time),pictureHeight=layout.tileHeight-(time&&!sideTimes?9:0),pictureWidth=layout.tileWidth-(sideTimes&&hasTimes?minTimeWidth+3:0),art=event.art;
         const path=String(art).startsWith('data:image/')?art:generalIcons[String(art)]?`assets/icons/${generalIcons[String(art)]}.png`:/^\d+$/.test(String(art))?`assets/art-${art}.png`:`assets/${art}.png`;
-        await picture(a,path,tileX,tileTop,layout.tileWidth,pictureHeight);
-        if(time)centered(a,time,tileX,tileTop+layout.tileHeight-7.5,layout.tileWidth,6.5);
+        await picture(a,path,tileX,tileTop,pictureWidth,pictureHeight);
+        if(time){if(sideTimes)text(a,time,tileX+pictureWidth+3,tileTop+(layout.tileHeight-6.5)/2,6.5);else centered(a,time,tileX,tileTop+layout.tileHeight-7.5,layout.tileWidth,6.5);}
       }
     }
     let textTop=bodyTop+(iconEvents.length?iconHeight+3:0);for(const entry of textEvents){entry.rows.forEach((line,index)=>text(a,line,x+5,textTop+index*8,7.5));textTop+=entry.rows.length*8+2;}
