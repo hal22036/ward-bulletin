@@ -1,6 +1,8 @@
 /* Legal landscape, three-panel bulletin, based on the ward's November 1 reference. */
 window.makePdf = async function () {
-  const {PDFDocument, StandardFonts, rgb}=PDFLib;
+  const {PDFDocument, StandardFonts}=PDFLib;
+  const letter=data.paperSize==='letter',monochrome=data.printColor==='bw';
+  const rgb=(r,g,b)=>{if(monochrome){const v=.2126*r+.7152*g+.0722*b;return PDFLib.rgb(v,v,v)}return PDFLib.rgb(r,g,b)};
   const doc=await PDFDocument.create();
   const font=await doc.embedFont(StandardFonts.Helvetica), bold=await doc.embedFont(StandardFonts.HelveticaBold), italic=await doc.embedFont(StandardFonts.HelveticaOblique);
   const pages=[doc.addPage([1008,612]),doc.addPage([1008,612])], warnings=[];
@@ -13,7 +15,7 @@ window.makePdf = async function () {
   function rounded(p,x,top,w,h,r=15,fill){const d=`M ${r} 0 H ${w-r} Q ${w} 0 ${w} ${r} V ${h-r} Q ${w} ${h} ${w-r} ${h} H ${r} Q 0 ${h} 0 ${h-r} V ${r} Q 0 0 ${r} 0 Z`;p.drawSvgPath(d,{x,y:612-top,borderColor:black,borderWidth:1,...(fill?{color:fill}:{})})}
   function rect(p,x,top,w,h,fill,border=black,bw=.7){p.drawRectangle({x,y:612-top-h,width:w,height:h,...(fill?{color:fill}:{}),borderColor:border,borderWidth:bw})}
   function paragraph(p,s,x,top,w,h,size=10,f=font,min=8){const originalSize=size;let a=lines(s,size,w,f);while(a.length*size*1.2>h&&size>min){size-=.25;a=lines(s,size,w,f)}if(a.length*size*1.2>h)throw Error('Too much text in a bulletin section. Shorten it before downloading.');if(size<originalSize&&size<9)warnings.push('small text');a.forEach((l,i)=>text(p,l,x,top+i*size*1.2,size,f));return a.length*size*1.2}
-  const images={};async function img(name){if(!images[name]){const r=await fetch(name);if(!r.ok)throw Error('Could not load bulletin artwork.');const b=await r.arrayBuffer();images[name]=new Uint8Array(b)[0]===137?await doc.embedPng(b):await doc.embedJpg(b)}return images[name]}
+  const images={};async function img(name){if(!images[name]){const r=await fetch(name);if(!r.ok)throw Error('Could not load bulletin artwork.');const b=await r.arrayBuffer();if(monochrome){const bitmap=await createImageBitmap(new Blob([b])),canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);bitmap.close();const pixels=context.getImageData(0,0,canvas.width,canvas.height);for(let i=0;i<pixels.data.length;i+=4){const v=Math.round(.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2]);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=v;}context.putImageData(pixels,0,0);images[name]=await doc.embedPng(canvas.toDataURL('image/png'));}else images[name]=new Uint8Array(b)[0]===137?await doc.embedPng(b):await doc.embedJpg(b)}return images[name]}
   async function picture(p,name,x,top,w,h){const im=await img(name),s=Math.min(w/im.width,h/im.height);p.drawImage(im,{x:x+(w-im.width*s)/2,y:612-top-h+(h-im.height*s)/2,width:im.width*s,height:im.height*s})}
   function entry(p,label,value,top){let size=12;const w=274,x=19;while(font.widthOfTextAtSize(clean(label+' '+value),size)>w&&size>8)size-=.25;const lw=font.widthOfTextAtSize(clean(label),size),vw=font.widthOfTextAtSize(clean(value),size);text(p,label,x,top,size);text(p,value,x+w-vw,top,size);const a=x+lw+7,b=x+w-vw-7;if(b>a){const count=Math.floor((b-a)/font.widthOfTextAtSize('.',size));text(p,'.'.repeat(count),a,top,size)}}
   function hymn(p,label,value,top){const m=value.match(/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i);entry(p,label,m?m[1]:value,top);if(m)centered(p,'“'+m[2]+'”',19,top+14,274,11.5)}
@@ -67,7 +69,7 @@ window.makePdf = async function () {
   await picture(p,'assets/masthead.png',721,29,255,80);await picture(p,data.cover,722,113,252,336);centered(p,data.ward.toUpperCase(),685,450,315,21);centered(p,data.stake.toUpperCase(),685,478,315,16);await picture(p,'assets/ward-qr.png',824,520,51,51);await picture(p,'assets/scan-caption.png',807,574,89,27);
   // Announcements keep their own column and the calendar occupies two panels.
   const a=pages[0];rounded(a,10,33,323,559,18);centered(a,'ANNOUNCEMENTS',17,37,309,22,bold);
-  const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});let y=69;
+  const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});if(letter){const first=meetingDate();first.setDate(1);first.setDate(first.getDate()-first.getDay());first.setDate(first.getDate()+41);const future=events().filter(e=>e.date>dateKey(first));if(future.length)notices.push({title:'Future events',body:future.map(futureEventText).join(' / '),icon:''});}let y=69;
   const artwork=[[/choir/i,'choir'],[/ym\s*\/\s*yw|youth/i,2],[/primary activ/i,'primary-activities'],[/tithing/i,19],[/lunch/i,'lunch'],[/primary program/i,8],[/relief society/i,20],[/christmas/i,0]];
   const generalIcons={'choir':'music','2':'youth','primary-activities':'children','19':'giving','lunch':'meal','8':'program','20':'community','0':'holiday'};
   function noticePlan(n,size){const content=[n.title,n.body].join('\n'),art=n.icon==='upload'?(n.image||null): (n.icon==='auto'?artwork.find(([re])=>re.test(content))?.[1]:n.icon||null),x=art!=null?61:18,w=art!=null?263:304;const parts=content.split('\n'),title=parts.shift(),body=parts.join(' '),tokens=[...clean(title).split(' ').map(t=>({t,f:bold})),...clean(body).split(' ').map(t=>({t,f:font}))];let yy=0,xx=0,runs=[];for(const {t,f} of tokens){const tw=f.widthOfTextAtSize(t+' ',size);if(xx+tw>w&&xx>0){yy+=size*1.16;xx=0}runs.push({t,f,xx,yy});xx+=tw}return {art,x,runs,height:Math.max(art!=null?33:0,yy+size*1.16)+9}}
@@ -76,6 +78,7 @@ window.makePdf = async function () {
   const extraGap=Math.max(0,(485-notices.reduce((v,n)=>v+noticePlan(n,size).height,0))/Math.max(1,notices.length));
   for(const n of notices){const plan=noticePlan(n,size);if(plan.art!=null)await picture(a,(String(plan.art).startsWith('data:image/')?plan.art:generalIcons[String(plan.art)]?`assets/icons/${generalIcons[String(plan.art)]}.png`:/^\d+$/.test(String(plan.art))?`assets/art-${plan.art}.png`:`assets/${plan.art}.png`),16,y+2,38,33);for(const r of plan.runs)text(a,r.t,plan.x+r.xx,y+r.yy,size,r.f);y+=plan.height+extraGap;}
   if(y>558)throw Error('Announcements extend into the submission footer. Shorten them.');rule(a,10,562,323,rgb(.32,.2,.5));paragraph(a,data.submission,35,566,286,22,8,italic,7.5);
+  if(!letter){
   const d=meetingDate(),year=d.getFullYear(),month=d.getMonth(),first=new Date(year,month,1),start=first.getDay(),days=new Date(year,month+1,0).getDate(),rows=6,x0=366,calW=622,cw=calW/7,gridTop=129,ch=436/rows;
   rect(a,364,56,626,35,gray,gray);centered(a,d.toLocaleDateString('en-US',{month:'long'})+'/'+new Date(year,month+1,1).toLocaleDateString('en-US',{month:'long'}),366,57,622,25,bold);
   ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'].forEach((day,i)=>{rect(a,x0+i*cw,106,cw,23);centered(a,day,x0+i*cw+2,109,cw-4,12)});
@@ -99,5 +102,16 @@ window.makePdf = async function () {
     else{edge(x0,bottom,x0,step);edge(x0,step,left,step);edge(left,step,left,top);}
   }
   const endDate=new Date(year,month,rows*7-start),after=allEvents.filter(e=>e.date>endDate.toISOString().slice(0,10));if(after.length)paragraph(a,'Future events: '+after.sort((a,b)=>a.date.localeCompare(b.date)).map(futureEventText).join(' / '),367,574,619,23,8.5,font,8);
+  }
+  if(letter){
+    await doc.flush();
+    const booklet=await PDFDocument.create();
+    const box=(left,right)=>({left,right,bottom:0,top:612});
+    const [announcements,cover,program,ward]=await booklet.embedPages([pages[0],pages[1],pages[1],pages[1]],[box(0,336),box(672,1008),box(0,336),box(336,672)]);
+    const outside=booklet.addPage([792,612]),inside=booklet.addPage([792,612]);
+    outside.drawPage(announcements,{x:30,y:0,width:336,height:612});outside.drawPage(cover,{x:426,y:0,width:336,height:612});
+    inside.drawPage(program,{x:30,y:0,width:336,height:612});inside.drawPage(ward,{x:426,y:0,width:336,height:612});
+    return {bytes:await booklet.save(),warnings:[...new Set(warnings)]};
+  }
   return {bytes:await doc.save(),warnings:[...new Set(warnings)]};
 };
