@@ -124,7 +124,7 @@ window.makePdf = async function (settings={}) {
     const quoteRows=quote?lines(quote,quoteSize,283):[],wardRows=data.ward.trim()?lines(data.ward.toUpperCase(),wardSize,315):[],stakeRows=data.stake.trim()?lines(data.stake.toUpperCase(),stakeSize,315):[];
     const quoteHeight=quoteRows.length*quoteSize*1.2,wardHeight=wardRows.length*wardSize*1.2,stakeHeight=stakeRows.length*stakeSize*1.2;
     let y=quote?455:450;const quoteTop=y;if(quoteRows.length)y+=quoteHeight+5;const wardTop=y;if(wardRows.length)y+=wardHeight+3;const stakeTop=y;if(stakeRows.length)y+=stakeHeight;
-    const qrTop=Math.max(528,y+5),bottom=showQr?qrTop+55+2+9.6:y;
+    const qrTop=Math.max(528,y+5),bottom=showQr?qrTop+74:y;
     return {quoteSize,wardSize,stakeSize,quoteRows,wardRows,stakeRows,quoteTop,wardTop,stakeTop,qrTop,bottom,quoteHeight};
   }
   let coverDensity=0,footer=coverFooterPlan(0);
@@ -133,7 +133,7 @@ window.makePdf = async function (settings={}) {
   footer.quoteRows.forEach((line,i)=>centered(p,line,705,footer.quoteTop+i*footer.quoteSize*1.2,283,footer.quoteSize,italic));
   footer.wardRows.forEach((line,i)=>centered(p,line,685,footer.wardTop+i*footer.wardSize*1.2,315,footer.wardSize));
   footer.stakeRows.forEach((line,i)=>centered(p,line,685,footer.stakeTop+i*footer.stakeSize*1.2,315,footer.stakeSize));
-  if(showQr){await picture(p,data.coverQr,823,footer.qrTop,55,55);centered(p,'Scan me',823,footer.qrTop+57,55,8,italic);p.drawSvgPath('M 0 0 C 12 0 16 -8 14 -20 M 8 -15 L 14 -20 L 19 -13',{x:879,y:612-(footer.qrTop+64),borderColor:black,borderWidth:1.1});}
+  if(showQr){await picture(p,data.coverQr,823,footer.qrTop,55,55);await picture(p,'assets/scan-me.png',811,footer.qrTop+26,64,47);}
   // Announcements keep their own column and the calendar occupies two panels.
   const a=pages[0];rounded(a,10,33,323,559,18);centered(a,'ANNOUNCEMENTS',17,37,309,22,bold);
   const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});if(letter){const first=calendarWindow().through;const future=events().filter(e=>e.date>dateKey(first));if(future.length)notices.push({title:'Future events',body:future.map(futureEventText).join(' / '),icon:''});}let y=69;
