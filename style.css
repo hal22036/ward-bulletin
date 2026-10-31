@@ -31,3 +31,5 @@ nav{gap:7px}nav button{font-size:14px;padding:11px 13px}
 .ward-row{border:1px solid #d5dacf;border-radius:5px;padding:10px;margin:12px 0}.ward-leadership-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.ward-schedule-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ward-row input{width:100%;min-width:0}.ward-row .field{min-width:0;margin:8px 0 14px}#editor .ward-leadership-row label{font-size:14px!important}
 
 #editor .order-handle{cursor:grab;background:#e6ece4;color:#294c41;font-size:23px;line-height:1;padding:8px 12px;margin:0 8px 5px 0;min-width:44px;min-height:44px;vertical-align:middle}#editor .order-handle:active{cursor:grabbing}.order-handle:focus-visible{outline:3px solid #315b4b;outline-offset:2px}.order-over{outline:3px solid #72967e;outline-offset:2px;background:#edf3e9}.order-dragging{opacity:.55}
+
+#paper[data-stale="true"]{outline:2px solid #9b6931;outline-offset:3px}#paper[data-stale="true"]+#previewStatus{color:#78491c;font-weight:600}

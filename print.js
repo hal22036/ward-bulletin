@@ -61,7 +61,17 @@ window.makePdf = async function () {
   const wardData=typeof readWard==='function'?readWard():null;const leadership=wardData?wardData.leadership.filter(row=>row.calling||row.name||row.phone):data.leadership.split('\n').filter(Boolean);const rowSize=Math.min(8.1,135/(leadership.length*1.18));if(rowSize<7)throw Error('Ward leadership has too many rows.');leadership.forEach((line,i)=>{const cols=typeof line==='object'?[line.calling,line.name,line.phone]:line.includes('|')?line.split('|'):line.split(/\s+[—–]\s+/);const y=40+i*rowSize*1.18;paragraph(p,cols[0].trim(),355,y,108,rowSize*1.3,rowSize,font,rowSize);if(cols[1])paragraph(p,cols[1].trim(),466,y,103,rowSize*1.3,rowSize,font,rowSize);if(cols[2])text(p,cols[2].trim(),576,y,rowSize)});
   rule(p,360,186,274,black,1.8);paragraph(p,data.interviews||'',371,189,259,22,9,font,8);rule(p,360,213,274,black,1);
   rounded(p,346,218,302,150);centered(p,'MISSIONARIES FROM THE '+data.ward.toUpperCase(),351,219,292,10,bold);
-  const missionaries=wardData?wardData.missionaries.map(row=>[row.name,row.mission,row.address1,row.address2,row.address3,row.email].filter(Boolean).join('\n')).filter(Boolean):data.missionaries.split(/\n\s*\n/).filter(Boolean);if(missionaries.length<=3){for(let i=0;i<Math.min(2,missionaries.length);i++)paragraph(p,missionaries[i],370+i*116,232,i===0?113:146,63,9,font,8);if(missionaries[2]){rule(p,355,300,280,black,1.7);const rows=lines(missionaries[2],9,280);if(rows.length>6)throw Error('Shorten the third missionary entry.');rows.forEach((l,i)=>centered(p,l,355,303+i*10.5,280,9))}}else paragraph(p,data.missionaries,355,234,284,127,9);
+  const missionaries=wardData?wardData.missionaries.map(row=>[row.name,row.mission,row.address1,row.address2,row.address3,row.email].filter(Boolean).join('\n')).filter(Boolean):data.missionaries.split(/\n\s*\n/).filter(Boolean);
+  if(missionaries.length>4)throw Error('The missionary panel fits up to four full contact entries. Remove an entry or shorten the information before exporting.');
+  if(missionaries.length===1)paragraph(p,missionaries[0],362,239,270,115,9,font,8);
+  else if(missionaries.length===2){for(let i=0;i<2;i++)paragraph(p,missionaries[i],357+i*145,239,137,115,9,font,8);}
+  else if(missionaries.length===3){
+    for(let i=0;i<2;i++)paragraph(p,missionaries[i],357+i*145,232,137,64,9,font,7.5);
+    rule(p,355,300,280,black,1.2);const rows=lines(missionaries[2],9,280);if(rows.length>6)throw Error('Shorten the third missionary entry so it fits clearly.');rows.forEach((line,i)=>centered(p,line,355,303+i*10.5,280,9));
+  }else if(missionaries.length===4){
+    rule(p,355,300,280,black,1.2);
+    for(let i=0;i<4;i++)paragraph(p,missionaries[i],357+(i%2)*145,i<2?232:304,137,i<2?64:59,8.5,font,7.5);
+  }
   rect(p,346,374,302,105);centered(p,'Las Vegas Nevada Temple',353,378,288,12,bold);paragraph(p,data.temple||'',360,400,275,72,10.5);
   rect(p,347,492,300,106);centered(p,meetingDate().getFullYear()+' Meeting Schedule',351,497,202,10,bold);
   const parts=data.information.split(/\n\s*\n/),schedule=wardData?wardData.schedule.filter(row=>row.className||row.time):parts[0].split('\n').map(line=>{const values=line.split(/[·|]/);return {className:values[0].trim(),time:(values[1]||'').trim()}}),notes=wardData?wardData.notes||'':(parts[1]||'').replace(/^Primary classes\n?/i,'');

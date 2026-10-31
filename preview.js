@@ -39,13 +39,14 @@ async function refresh() {
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     if (current !== revision) return;
     paper.replaceChildren(canvas);
+    paper.removeAttribute('data-stale');
     paper.setAttribute('aria-busy', 'false');
     message.textContent = 'Showing the actual PDF · Page ' + pageNumber + ' of 2';
   } catch (error) {
     if (current !== revision) return;
-    paper.replaceChildren();
     paper.setAttribute('aria-busy', 'false');
-    message.textContent = 'Preview unavailable: ' + error.message;
+    paper.setAttribute('data-stale', 'true');
+    message.textContent = (paper.childElementCount ? 'Showing the last successful preview. Your latest edits are not shown yet. ' : 'Preview not ready. ') + error.message;
   } finally {
     if (documentTask) await documentTask.destroy();
     running = false;
