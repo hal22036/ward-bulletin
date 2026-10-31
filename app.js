@@ -325,14 +325,24 @@ function futureEventText(event){
  return label+': '+(match?match[0].replace(/\s*(am|pm)$/i,' $1').toLowerCase()+' - ':'')+title;
 }
 const repeatDayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function excludedDates(item){return [...new Set((Array.isArray(item.excludeDates)?item.excludeDates:[]).filter(date=>typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(new Date(date+'T12:00:00').getTime())&&dateKey(new Date(date+'T12:00:00'))===date))].sort();}
+function changeExcludedDate(source,index,value,remove=false){
+ const date=new Date(value+'T12:00:00');if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||Number.isNaN(date.getTime())||dateKey(date)!==value){status('Choose a valid date to exclude.');return;}
+ const list=source==='news'?readNews():readCalendar(),item=list[index];if(!item)return;
+ const dates=new Set(excludedDates(item));if(remove)dates.delete(value);else dates.add(value);item.excludeDates=[...dates].sort();
+ if(source==='news')saveNews(list);else saveCalendar(list);edit();status(remove?'Excluded date removed. This occurrence can appear again.':'Date excluded from this repeating calendar item.');
+}
 function repeatFields(item,source,index){
  const mode=item.repeatMode||'none',base=new Date((item.date||data.date)+'T12:00:00'),day=Number.isNaN(base.getTime())?0:base.getDay();
  const days=Array.isArray(item.repeatDays)?item.repeatDays:[day],weeks=Array.isArray(item.repeatWeeks)?item.repeatWeeks:[2,4];
  const attr=part=>`data-repeat-source="${source}" data-repeat-index="${index}" data-repeat-part="${part}"`;
- return `<div data-repeat-box="${source}-${index}"><label class="field">Repeat:<select ${attr('repeatMode')}>${[['none','Does not repeat'],['weekly','Every week'],['biweekly','Every other week'],['monthly_date','Every month on this date'],['monthly_weekday','Monthly on selected weekdays']].map(([value,label])=>`<option value="${value}" ${mode===value?'selected':''}>${label}</option>`).join('')}</select></label><div data-repeat-weekly ${['weekly','biweekly'].includes(mode)?'':'hidden'}><p class="note">Repeat on:</p>${repeatDayNames.map((name,i)=>`<label style="display:flex;gap:8px;align-items:center;font-size:12px;margin:8px 0"><input style="width:auto;margin:0" type="checkbox" ${attr('repeatDays')} value="${i}" ${days.includes(i)?'checked':''}>${name}</label>`).join('')}</div><div data-repeat-monthly ${mode==='monthly_weekday'?'':'hidden'}><label class="field">Day of week:<select ${attr('repeatWeekday')}>${repeatDayNames.map((name,i)=>`<option value="${i}" ${Number(item.repeatWeekday??day)===i?'selected':''}>${name}</option>`).join('')}</select></label><p class="note">Which weeks of the month? Choose more than one, such as 2nd and 4th.</p>${[[1,'1st'],[2,'2nd'],[3,'3rd'],[4,'4th'],[5,'5th'],[-1,'Last']].map(([value,label])=>`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;margin:8px 12px 0 0"><input style="width:auto;margin:0" type="checkbox" ${attr('repeatWeeks')} value="${value}" ${weeks.includes(value)?'checked':''}>${label}</label>`).join('')}</div><div data-repeat-end ${mode!=='none'?'':'hidden'}><label class="field">Repeat until (optional):<input type="date" ${attr('repeatUntil')} value="${esc(item.repeatUntil||'')}"></label><p class="note">Leave blank to keep repeating. The calendar generates dates from this one entry; the announcement prints only once.</p></div></div>`;
+ return `<div data-repeat-box="${source}-${index}"><label class="field">Repeat:<select ${attr('repeatMode')}>${[['none','Does not repeat'],['weekly','Every week'],['biweekly','Every other week'],['monthly_date','Every month on this date'],['monthly_weekday','Monthly on selected weekdays']].map(([value,label])=>`<option value="${value}" ${mode===value?'selected':''}>${label}</option>`).join('')}</select></label><div data-repeat-weekly ${['weekly','biweekly'].includes(mode)?'':'hidden'}><p class="note">Repeat on:</p>${repeatDayNames.map((name,i)=>`<label style="display:flex;gap:8px;align-items:center;font-size:12px;margin:8px 0"><input style="width:auto;margin:0" type="checkbox" ${attr('repeatDays')} value="${i}" ${days.includes(i)?'checked':''}>${name}</label>`).join('')}</div><div data-repeat-monthly ${mode==='monthly_weekday'?'':'hidden'}><label class="field">Day of week:<select ${attr('repeatWeekday')}>${repeatDayNames.map((name,i)=>`<option value="${i}" ${Number(item.repeatWeekday??day)===i?'selected':''}>${name}</option>`).join('')}</select></label><p class="note">Which weeks of the month? Choose more than one, such as 2nd and 4th.</p>${[[1,'1st'],[2,'2nd'],[3,'3rd'],[4,'4th'],[5,'5th'],[-1,'Last']].map(([value,label])=>`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;margin:8px 12px 0 0"><input style="width:auto;margin:0" type="checkbox" ${attr('repeatWeeks')} value="${value}" ${weeks.includes(value)?'checked':''}>${label}</label>`).join('')}</div><div data-repeat-end ${mode!=='none'?'':'hidden'}><label class="field">Repeat until (optional):<input type="date" ${attr('repeatUntil')} value="${esc(item.repeatUntil||'')}"></label><p class="note">Leave blank to keep repeating. The calendar generates dates from this one entry; the announcement prints only once.</p><fieldset style="border:1px solid #d5dacf;border-radius:5px;padding:10px;margin:14px 0"><legend>Exclude date(s):</legend><label class="field">Date to exclude:<input type="date" data-exclude-date="${source}-${index}"></label><button type="button" class="secondary" data-exclude-add="${source}" data-exclude-index="${index}">Add excluded date</button><p class="note">Skip just these calendar dates. The repeat schedule and announcement stay saved.</p>${excludedDates(item).map(date=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0"><span>${esc(new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}))}</span><button type="button" class="secondary" data-exclude-remove="${source}" data-exclude-index="${index}" data-exclude-value="${date}" aria-label="Remove exclusion for ${date}">Remove</button></div>`).join('')}</fieldset></div></div>`;
 }
 function bindRepeats(){
- const root=$('#editor');root.querySelectorAll('[data-repeat-part]').forEach(input=>input.onchange=()=>{
+ const root=$('#editor');
+ root.querySelectorAll('[data-exclude-add]').forEach(button=>button.onclick=()=>{const source=button.dataset.excludeAdd,index=+button.dataset.excludeIndex,picker=root.querySelector('[data-exclude-date="'+source+'-'+index+'"]');if(picker)changeExcludedDate(source,index,picker.value);});
+ root.querySelectorAll('[data-exclude-remove]').forEach(button=>button.onclick=()=>changeExcludedDate(button.dataset.excludeRemove,+button.dataset.excludeIndex,button.dataset.excludeValue,true));
+ root.querySelectorAll('[data-repeat-part]').forEach(input=>input.onchange=()=>{
  const source=input.dataset.repeatSource,index=+input.dataset.repeatIndex,part=input.dataset.repeatPart,list=source==='news'?readNews():readCalendar(),item=list[index];
  if(!item)return;
  if(part==='repeatDays'||part==='repeatWeeks'){
@@ -351,7 +361,7 @@ function dateKey(date){return date.getFullYear()+'-'+String(date.getMonth()+1).p
 function dateDayNumber(date){return Math.floor(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000);}
 function expandCalendarEvent(event,from,through){
  const base=new Date(event.date+'T12:00:00');if(Number.isNaN(base.getTime())||dateKey(base)!==event.date)return [];
- const mode=event.repeatMode||'none';if(mode==='none')return [event];
+ const mode=event.repeatMode||'none';if(mode==='none')return [event];const exclusions=new Set(excludedDates(event));
  const until=/^\d{4}-\d{2}-\d{2}$/.test(event.repeatUntil||'')?event.repeatUntil:'9999-12-31';
  const days=Array.isArray(event.repeatDays)?event.repeatDays:[base.getDay()],weeks=Array.isArray(event.repeatWeeks)?event.repeatWeeks:[2,4],weekday=Number(event.repeatWeekday??base.getDay());
  const cursor=new Date(Math.max(base.getTime(),from.getTime()));cursor.setHours(12,0,0,0);
@@ -367,7 +377,7 @@ function expandCalendarEvent(event,from,through){
    const ordinal=Math.floor((cursor.getDate()-1)/7)+1,last=cursor.getDate()+7>new Date(cursor.getFullYear(),cursor.getMonth()+1,0).getDate();
    matches=cursor.getDay()===weekday&&(weeks.includes(ordinal)||weeks.includes(-1)&&last);
   }
-  if(matches){if(cursor<=through)result.push({...event,date:key});else{if(!result.length)result.push({...event,date:key});break;}}
+  if(matches&&!exclusions.has(key)){if(cursor<=through)result.push({...event,date:key});else{if(!result.length)result.push({...event,date:key});break;}}
  }
  return result;
 }
