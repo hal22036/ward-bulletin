@@ -53,3 +53,4 @@ header .brand{flex-direction:column;align-items:center;justify-self:start;gap:4p
 @media(max-width:750px){#previewViewport{max-height:70dvh}.preview-zoom{gap:6px}header .brand-logo{width:86px;height:61px}}
 
 .account-link{color:#315b4b;font-size:14px;font-weight:600;padding:6px 0}
+#textAppearanceSettings{margin:12px 0 20px;padding:0 0 12px;border-bottom:1px solid #d5dacf}#textAppearanceSettings .field{font-size:15px;line-height:1.5}#textAppearanceSettings select{font-size:16px;min-height:44px}#textAppearanceSettings summary{font-size:16px;cursor:pointer;padding:10px 0}#textAppearanceSettings details details{padding:0 8px;border-top:1px solid #e0e5dc}#textAppearanceSettings .note{font-size:12px}
