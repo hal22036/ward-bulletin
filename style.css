@@ -27,3 +27,5 @@ nav{gap:7px}nav button{font-size:14px;padding:11px 13px}
 @media(max-width:750px){.workspace{display:block}.preview{position:static;min-height:0;max-height:none;overflow:visible;border-radius:0 0 10px 10px;padding:18px}.workspace aside{border-right:0}.previewhead{display:flex}.previewhead select{width:100%}}
 
 .print-settings{margin:20px 0;padding:0 0 16px;border-bottom:1px solid #d5dacf}.print-settings label.field{font-size:15px;line-height:1.5}.print-settings select{font-size:16px;line-height:1.5;min-height:44px}
+
+.ward-row{border:1px solid #d5dacf;border-radius:5px;padding:10px;margin:12px 0}.ward-leadership-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.ward-schedule-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ward-row input{width:100%;min-width:0}.ward-row .field{min-width:0;margin:8px 0 14px}#editor .ward-leadership-row label{font-size:14px!important}
