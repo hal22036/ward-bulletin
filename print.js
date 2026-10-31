@@ -114,8 +114,8 @@ window.makePdf = async function () {
     const box=(left,right)=>({left,right,bottom:0,top:612});
     const [announcements,cover,program,ward]=await booklet.embedPages([pages[0],pages[1],pages[1],pages[1]],[box(0,336),box(672,1008),box(0,336),box(336,672)]);
     const outside=booklet.addPage([792,612]),inside=booklet.addPage([792,612]);
-    outside.drawPage(announcements,{x:30,y:0,width:336,height:612});outside.drawPage(cover,{x:426,y:0,width:336,height:612});
-    inside.drawPage(program,{x:30,y:0,width:336,height:612});inside.drawPage(ward,{x:426,y:0,width:336,height:612});
+    outside.drawPage(ward,{x:30,y:0,width:336,height:612});outside.drawPage(cover,{x:426,y:0,width:336,height:612});
+    inside.drawPage(announcements,{x:30,y:0,width:336,height:612});inside.drawPage(program,{x:426,y:0,width:336,height:612});
     return {bytes:await booklet.save(),warnings:[...new Set(warnings)]};
   }
   return {bytes:await doc.save(),warnings:[...new Set(warnings)]};
