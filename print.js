@@ -5,6 +5,7 @@ window.makePdf = async function () {
   const rgb=(r,g,b)=>{if(monochrome){const v=.2126*r+.7152*g+.0722*b;return PDFLib.rgb(v,v,v)}return PDFLib.rgb(r,g,b)};
   const doc=await PDFDocument.create();
   const font=await doc.embedFont(StandardFonts.Helvetica), bold=await doc.embedFont(StandardFonts.HelveticaBold), italic=await doc.embedFont(StandardFonts.HelveticaOblique);
+  const serif=await doc.embedFont(StandardFonts.TimesRoman),serifBold=await doc.embedFont(StandardFonts.TimesRomanBold),serifItalic=await doc.embedFont(StandardFonts.TimesRomanItalic),serifBoldItalic=await doc.embedFont(StandardFonts.TimesRomanBoldItalic),boldItalic=await doc.embedFont(StandardFonts.HelveticaBoldOblique);
   const pages=[doc.addPage([1008,612]),doc.addPage([1008,612])], warnings=[];
   const black=rgb(.08,.08,.08), gold=rgb(.8,.58,.22), gray=rgb(.8,.83,.82);
   const clean=s=>String(s||'').replace(/[–—]/g,'-').replace(/·/g,' / ').replace(/[“”]/g,'"').replace(/[’]/g,"'").replace(/[^\x20-\x7e\n\r\u00a0-\u00ff]/g,'?');
@@ -86,8 +87,8 @@ window.makePdf = async function () {
   let blocks=wardPlan(0),density=0;
   const wardHeight=()=>blocks.reduce((sum,block)=>sum+block.height,0)+Math.max(0,blocks.length-1)*8;
   while(wardHeight()>581&&density<1){density=Math.min(1,density+.05);blocks=wardPlan(density);}
-  if(wardHeight()>581)throw Error('Ward information is too full to print clearly. Shorten leadership, missionary, temple, or schedule details.');
-  if(density>0)warnings.push('Ward information uses smaller text');
+  if(wardHeight()>581)throw Error('Ward/branch information is too full to print clearly. Shorten leadership, missionary, temple, or schedule details.');
+  if(density>0)warnings.push('Ward/branch information uses smaller text');
   let wardY=17+Math.min(55,Math.max(0,(581-wardHeight())/2));
   for(const block of blocks){
     if(block.kind==='leadership'){
@@ -135,14 +136,18 @@ window.makePdf = async function () {
   const generalIcons={'choir':'music','2':'youth','primary-activities':'children','19':'giving','lunch':'meal','8':'program','20':'community','0':'holiday'};
   const contact=String(data.submission||'').trim();let contactSize=8,contactRows=contact?lines(contact,contactSize,286,italic):[];while(contactRows.length*contactSize*1.2>45&&contactSize>7.5){contactSize-=.25;contactRows=lines(contact,contactSize,286,italic);}if(contactRows.length*contactSize*1.2>45)throw Error('Bulletin contact information is too long. Shorten the instructions.');
   const contactHeight=contactRows.length*contactSize*1.2,contactTop=contact?Math.min(562,588-contactHeight-5):592,newsHeight=contactTop-77;
-  function noticePlan(n,size){const content=[n.title,n.body].join('\n'),art=n.icon==='upload'?(n.image||null):(n.icon==='auto'?artwork.find(([re])=>re.test(content))?.[1]:n.icon||null),x=art!=null?61:18,w=art!=null?263:304,parts=content.split('\n'),title=parts.shift(),body=parts.join(' '),tokens=[...clean(title).split(' ').map(t=>({t,f:bold})),...clean(body).split(' ').map(t=>({t,f:font}))];let yy=0,xx=0,runs=[];
-    for(const {t,f} of tokens){let chunk='';const chunks=[];for(const ch of t){if(f.widthOfTextAtSize(chunk+ch,size)>w&&chunk){chunks.push(chunk);chunk='';}chunk+=ch;}chunks.push(chunk);chunks.forEach((part,i)=>{const tw=f.widthOfTextAtSize(part+(i===chunks.length-1?' ':''),size);if(xx+tw>w&&xx>0){yy+=size*1.16;xx=0;}runs.push({t:part,f,xx,yy});xx+=tw;});}
-    return {art,x,runs,height:Math.max(art!=null?33:0,yy+size*1.16)+9};
+  function noticePlan(n,scaleSize){
+    const requested=[9,10,11,12,14].includes(Number(n.fontSize))?Number(n.fontSize):10.3,size=Math.max(8.5,requested*scaleSize/10.3),faces=n.fontFamily==='serif'?{normal:serif,bold:serifBold,italic:serifItalic,bolditalic:serifBoldItalic}:{normal:font,bold,italic,bolditalic:boldItalic},bodyFace=faces[n.fontStyle]||faces.normal,titleFace=['italic','bolditalic'].includes(n.fontStyle)?faces.bolditalic:faces.bold;
+    const content=[n.title,n.body].join('\n'),art=n.icon==='upload'?(n.image||null):(n.icon==='auto'?artwork.find(([re])=>re.test(content))?.[1]:n.icon||null),x=art!=null?61:18,w=art!=null?263:304;
+    const tokenize=(value,f)=>clean(value||'').replace(/\r\n?/g,'\n').split(/(\n)/).flatMap(part=>part==='\n'?[{br:true}]:part.split(/\s+/).filter(Boolean).map(t=>({t,f})));
+    const tokens=[...tokenize(n.title,titleFace),...tokenize(n.body,bodyFace)];let yy=0,xx=0,runs=[];
+    for(const token of tokens){if(token.br){yy+=size*1.16;xx=0;continue;}const {t,f}=token;let chunk='';const chunks=[];for(const ch of t){if(f.widthOfTextAtSize(chunk+ch,size)>w&&chunk){chunks.push(chunk);chunk='';}chunk+=ch;}chunks.push(chunk);chunks.forEach((part,i)=>{const tw=f.widthOfTextAtSize(part+(i===chunks.length-1?' ':''),size);if(xx+tw>w&&xx>0){yy+=size*1.16;xx=0;}runs.push({t:part,f,xx,yy});xx+=tw;});}
+    return {art,x,runs,size,height:Math.max(art!=null?33:0,yy+size*1.16)+9};
   }
   let size=10.3;while(size>8.5&&notices.reduce((v,n)=>v+noticePlan(n,size).height,0)>newsHeight)size=Math.max(8.5,size-.1);
-  if(notices.reduce((v,n)=>v+noticePlan(n,size).height,0)>newsHeight)throw Error('Announcements'+(letter?' and future events':'')+' are too full to print clearly. Shorten or hide an item.');if(size<9)warnings.push('Announcements use smaller text');
+  if(notices.reduce((v,n)=>v+noticePlan(n,size).height,0)>newsHeight)throw Error('Announcements'+(letter?' and future events':'')+' are too full to print clearly. Shorten or hide an item.');if(size<9)warnings.push('Announcements use smaller text');if(size<10.2&&notices.some(n=>n.fontSize))warnings.push('Announcement text scaled to fit');
   const extraGap=Math.min(14,Math.max(0,(newsHeight-notices.reduce((v,n)=>v+noticePlan(n,size).height,0))/Math.max(1,notices.length)));
-  for(const n of notices){const plan=noticePlan(n,size);if(plan.art!=null)await picture(a,(String(plan.art).startsWith('data:image/')?plan.art:generalIcons[String(plan.art)]?`assets/icons/${generalIcons[String(plan.art)]}.png`:/^\d+$/.test(String(plan.art))?`assets/art-${plan.art}.png`:`assets/${plan.art}.png`),16,y+2,38,33);for(const r of plan.runs)text(a,r.t,plan.x+r.xx,y+r.yy,size,r.f);y+=plan.height+extraGap;}
+  for(const n of notices){const plan=noticePlan(n,size);if(plan.art!=null)await picture(a,(String(plan.art).startsWith('data:image/')?plan.art:generalIcons[String(plan.art)]?`assets/icons/${generalIcons[String(plan.art)]}.png`:/^\d+$/.test(String(plan.art))?`assets/art-${plan.art}.png`:`assets/${plan.art}.png`),16,y+2,38,33);for(const r of plan.runs)text(a,r.t,plan.x+r.xx,y+r.yy,plan.size,r.f);y+=plan.height+extraGap;}
   if(y>contactTop)throw Error('Announcements are too close to the contact footer. Shorten or hide an item.');
   if(contact){rule(a,10,contactTop,323,rgb(.32,.2,.5));contactRows.forEach((line,i)=>text(a,line,35,contactTop+4+i*contactSize*1.2,contactSize,italic));}
   if(!letter){

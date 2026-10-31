@@ -35,7 +35,7 @@ async function refresh() {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', data.paperSize==='letter'?(pageNumber===2?'Print preview: inside announcements and program':'Print preview: outside ward information and front cover'):pageNumber===2?'Print preview: sacrament meeting program, ward information, and front cover':'Print preview: announcements and calendar');
+    canvas.setAttribute('aria-label', data.paperSize==='letter'?(pageNumber===2?'Print preview: inside announcements and program':'Print preview: outside ward/branch information and front cover'):pageNumber===2?'Print preview: sacrament meeting program, ward/branch information, and front cover':'Print preview: announcements and calendar');
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     if (current !== revision) return;
     paper.replaceChildren(canvas);
