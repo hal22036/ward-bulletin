@@ -114,6 +114,13 @@ function edit(){ $('#tabs').innerHTML=Object.keys(groups).map(k=>`<button type="
  save();
 });$('#editor').querySelectorAll('[data-key]').forEach(e=>e.oninput=()=>{data[e.dataset.key]=e.value;save()})}
 function program(){return `Presiding: ${data.presiding}\nConducting: ${data.conducting}\n\n${data.welcomeNotes}\n\nOpening hymn\n${data.opening}\n\nInvocation: ${data.invocation}\n\n${data.wardStakeNotes}\n\nSacrament hymn\n${data.sacrament}\n\nAdministration of the Sacrament\n\n${data.program}\n\nClosing hymn\n${data.closing}\n\nBenediction: ${data.benediction}`}
+function futureEventText(event){
+ const date=new Date(event.date+'T12:00:00');
+ const label=date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+ const match=event.text.match(/\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i);
+ const title=(match?event.text.replace(match[0],''):event.text).replace(/^[\s·:—–-]+|[\s·:—–-]+$/g,'').trim();
+ return label+': '+(match?match[0].replace(/\s*(am|pm)$/i,' $1').toLowerCase()+' - ':'')+title;
+}
 function events(){return data.events.split('\n').map(x=>{const i=x.indexOf('|');return {date:x.slice(0,i).trim(),text:x.slice(i+1).trim()}}).filter(e=>/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&e.text)}
 function calendarHtml(){const d=meetingDate(),year=d.getFullYear(),month=d.getMonth(),start=new Date(year,month,1).getDay(),days=new Date(year,month+1,0).getDate();return `<h3>${d.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</h3><div class="calgrid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<div class="calhead">${x}</div>`).join('')}${Array.from({length:42},(_,i)=>{const n=i-start+1;const key=`${year}-${String(month+1).padStart(2,'0')}-${String(n).padStart(2,'0')}`;return `<div class="calcell">${n>0&&n<=days?n+'<br>'+events().filter(e=>e.date===key).map(e=>esc(e.text)).join('<br>'):''}</div>`}).join('')}</div><p style="margin-top:12px">${events().filter(e=>!e.date.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)).map(e=>esc(e.date+' · '+e.text)).join('<br>')}</p>`}
 function render(){$('#edition').textContent=dateText();if(window.renderPrintPreview)window.renderPrintPreview();}
