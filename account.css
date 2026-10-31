@@ -6,3 +6,5 @@
 .test-payment label:has(input[type=date]){display:block}.plans .plan h3{font:23px Georgia,serif}.plan button{margin-top:12px}
 
 .one-time-plans{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:700px){.one-time-plans{grid-template-columns:1fr}}
+
+.dashboard-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.dashboard-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:24px 0}.dashboard-card{margin:0;padding:22px;display:flex;flex-direction:column;align-items:flex-start}.dashboard-card h2{margin:6px 0 10px}.dashboard-card p{margin:8px 0}.dashboard-card .eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;color:#637565}.access-status{font-weight:600}.dashboard-card .button,.dashboard-card button{margin-top:10px}.dashboard-card .secondary{font-size:14px}.dashboard-card #getBulletin,.dashboard-card #getKids{margin-top:auto}.dashboard-card>.button{margin-top:auto}.dashboard-card #planSummary{font-weight:600}#dashboardPaymentStatus{font-size:14px;color:#596a60}#liveStatus:empty{display:none}@media(max-width:850px){.dashboard-grid{grid-template-columns:1fr}.dashboard-card>.button{margin-top:12px}}
