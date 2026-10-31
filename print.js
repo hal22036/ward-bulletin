@@ -130,7 +130,7 @@ window.makePdf = async function () {
   if(showQr){await picture(p,data.coverQr,823,footer.qrTop,55,55);centered(p,'Scan for more',794,footer.qrTop+57,113,8,italic);}
   // Announcements keep their own column and the calendar occupies two panels.
   const a=pages[0];rounded(a,10,33,323,559,18);centered(a,'ANNOUNCEMENTS',17,37,309,22,bold);
-  const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});if(letter){const first=meetingDate();first.setDate(1);first.setDate(first.getDate()-first.getDay());first.setDate(first.getDate()+41);const future=events().filter(e=>e.date>dateKey(first));if(future.length)notices.push({title:'Future events',body:future.map(futureEventText).join(' / '),icon:''});}let y=69;
+  const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});if(letter){const first=meetingDate();first.setDate(1);first.setDate(first.getDate()-first.getDay());first.setDate(first.getDate()+34);const future=events().filter(e=>e.date>dateKey(first));if(future.length)notices.push({title:'Future events',body:future.map(futureEventText).join(' / '),icon:''});}let y=69;
   const artwork=[[/choir/i,'choir'],[/ym\s*\/\s*yw|youth/i,2],[/primary activ/i,'primary-activities'],[/tithing/i,19],[/lunch/i,'lunch'],[/primary program/i,8],[/relief society/i,20],[/christmas/i,0]];
   const generalIcons={'choir':'music','2':'youth','primary-activities':'children','19':'giving','lunch':'meal','8':'program','20':'community','0':'holiday'};
   const contact=String(data.submission||'').trim();let contactSize=8,contactRows=contact?lines(contact,contactSize,286,italic):[];while(contactRows.length*contactSize*1.2>45&&contactSize>7.5){contactSize-=.25;contactRows=lines(contact,contactSize,286,italic);}if(contactRows.length*contactSize*1.2>45)throw Error('Bulletin contact information is too long. Shorten the instructions.');
@@ -146,16 +146,30 @@ window.makePdf = async function () {
   if(y>contactTop)throw Error('Announcements are too close to the contact footer. Shorten or hide an item.');
   if(contact){rule(a,10,contactTop,323,rgb(.32,.2,.5));contactRows.forEach((line,i)=>text(a,line,35,contactTop+4+i*contactSize*1.2,contactSize,italic));}
   if(!letter){
-  const d=meetingDate(),year=d.getFullYear(),month=d.getMonth(),first=new Date(year,month,1),start=first.getDay(),days=new Date(year,month+1,0).getDate(),rows=6,x0=366,calW=622,cw=calW/7,gridTop=129,ch=436/rows;
-  rect(a,364,56,626,35,gray,gray);centered(a,d.toLocaleDateString('en-US',{month:'long'})+'/'+new Date(year,month+1,1).toLocaleDateString('en-US',{month:'long'}),366,57,622,25,bold);
+  const d=meetingDate(),year=d.getFullYear(),month=d.getMonth(),first=new Date(year,month,1),start=first.getDay(),days=new Date(year,month+1,0).getDate(),rows=5,x0=366,calW=622,cw=calW/7,gridTop=129,ch=436/rows;
+  const shownEnd=new Date(year,month,rows*7-start),monthHeading=d.toLocaleDateString('en-US',{month:'long'})+(shownEnd.getMonth()!==month?'/'+shownEnd.toLocaleDateString('en-US',{month:'long'}):'');rect(a,364,56,626,35,gray,gray);centered(a,monthHeading,366,57,622,25,bold);
   ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'].forEach((day,i)=>{rect(a,x0+i*cw,106,cw,23);centered(a,day,x0+i*cw+2,109,cw-4,12)});
-  const allEvents=events();for(let i=0;i<rows*7;i++){const date=new Date(year,month,i-start+1),key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,x=x0+i%7*cw,top=gridTop+Math.floor(i/7)*ch;rect(a,x,top,cw,ch);text(a,String(date.getDate()),x+5,top+1,12);if(date.getDate()===1)text(a,date.toLocaleDateString('en-US',{month:'long'}).toUpperCase(),x+15,top+4,8,bold);const ee=allEvents.filter(e=>e.date===key);let ey=top+17;for(const e of ee){const art=e.art;
- const hasArt=art!=null,eventLines=hasArt?[]:lines(e.text,7.5,cw-9);
- const imageHeight=Math.min(28,(ch-20)/Math.max(1,ee.length)-2);if(hasArt&&imageHeight<14)throw Error('Too many icon events in calendar day '+key+'. Hide an item or use shorter text-only entries.');const height=hasArt?imageHeight:eventLines.length*8;
- if(ey+height>top+ch-2)throw Error('Too many events in calendar day '+key+'. Shorten event names or hide an item.');
- if(hasArt){const path=String(art).startsWith('data:image/')?art:generalIcons[String(art)]?`assets/icons/${generalIcons[String(art)]}.png`:/^\d+$/.test(String(art))?`assets/art-${art}.png`:`assets/${art}.png`;await picture(a,path,x+5,ey,cw-10,imageHeight);const time=calendarTime(e.time);if(time)text(a,time,x+cw-30,ey+height-7,6);}
- else eventLines.forEach((line,index)=>text(a,line,x+5,ey+index*8,7.5));ey+=height+2;
- }}
+  const allEvents=events();for(let i=0;i<rows*7;i++){const date=new Date(year,month,i-start+1),key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,x=x0+i%7*cw,top=gridTop+Math.floor(i/7)*ch;rect(a,x,top,cw,ch);text(a,String(date.getDate()),x+5,top+1,12);if(date.getDate()===1)text(a,date.toLocaleDateString('en-US',{month:'long'}).toUpperCase(),x+15,top+4,8,bold);const ee=allEvents.filter(e=>e.date===key),bodyX=x+4,bodyTop=top+17,bodyWidth=cw-8,bodyHeight=ch-20;
+    const iconEvents=ee.filter(e=>e.art!=null),textEvents=ee.filter(e=>e.art==null).map(e=>({event:e,rows:lines(e.text,7.5,cw-9)})),textHeight=textEvents.reduce((sum,e)=>sum+e.rows.length*8+2,0),iconHeight=bodyHeight-textHeight-(textEvents.length&&iconEvents.length?3:0);
+    if(textHeight>bodyHeight)throw Error('Too many events in calendar day '+key+'. Shorten event names or hide an item.');
+    if(iconEvents.length){
+      const gap=3,hasTimes=iconEvents.some(e=>calendarTime(e.time)),timeBand=hasTimes?9:0,minTimeWidth=Math.max(0,...iconEvents.map(e=>font.widthOfTextAtSize(calendarTime(e.time),6.5)));
+      let layout=null;
+      for(let cols=1;cols<=iconEvents.length;cols++){
+        const rowCount=Math.ceil(iconEvents.length/cols),tileWidth=(bodyWidth-gap*(cols-1))/cols,tileHeight=(iconHeight-gap*(rowCount-1))/rowCount,score=Math.min(tileWidth,tileHeight-timeBand);
+        if(tileWidth>=minTimeWidth&&(!layout||score>layout.score))layout={cols,rowCount,tileWidth,tileHeight,score};
+      }
+      if(!layout||layout.score<14)throw Error('Too many icon events in calendar day '+key+'. Hide an item or use shorter text-only entries.');
+      for(let eventIndex=0;eventIndex<iconEvents.length;eventIndex++){
+        const event=iconEvents[eventIndex],row=Math.floor(eventIndex/layout.cols),col=eventIndex%layout.cols,countInRow=Math.min(layout.cols,iconEvents.length-row*layout.cols),rowWidth=countInRow*layout.tileWidth+(countInRow-1)*gap,tileX=bodyX+(bodyWidth-rowWidth)/2+col*(layout.tileWidth+gap),tileTop=bodyTop+row*(layout.tileHeight+gap),time=calendarTime(event.time),pictureHeight=layout.tileHeight-(time?9:0),art=event.art;
+        const path=String(art).startsWith('data:image/')?art:generalIcons[String(art)]?`assets/icons/${generalIcons[String(art)]}.png`:/^\d+$/.test(String(art))?`assets/art-${art}.png`:`assets/${art}.png`;
+        await picture(a,path,tileX,tileTop,layout.tileWidth,pictureHeight);
+        if(time)centered(a,time,tileX,tileTop+layout.tileHeight-7.5,layout.tileWidth,6.5);
+      }
+    }
+    let textTop=bodyTop+(iconEvents.length?iconHeight+3:0);for(const entry of textEvents){entry.rows.forEach((line,index)=>text(a,line,x+5,textTop+index*8,7.5));textTop+=entry.rows.length*8+2;}
+  }
+
 
   const nextIndex=start+days;
   if(data.monthBorderMode!=='off'&&nextIndex<rows*7){
