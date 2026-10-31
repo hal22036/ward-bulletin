@@ -40,15 +40,18 @@ window.makePdf = async function () {
   for(const item of items){
     item.height=item.kind==='notes'?lines(item.value,11.5,270).length*13.8:item.kind==='hymn'&&/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i.test(item.value)?30:15;
   }
-  const top=345,bottom=551,total=items.reduce((sum,item)=>sum+item.height,0);
+  const top=345,bottom=586,total=items.reduce((sum,item)=>sum+item.height,0);
   if(total>bottom-top)throw Error('Too many program items to fit clearly. Shorten notes or hide an item before downloading.');
-  const gap=items.length>1?(bottom-top-total)/(items.length-1):0;
-  let programY=top;
+  const gap=(bottom-top-total)/(items.length+1);
+  let programY=top+gap;
   for(const item of items){
     if(item.kind==='entry')entry(p,item.label,item.value,programY);
     else if(item.kind==='hymn')hymn(p,item.label,item.value,programY);
-    else if(item.kind==='center')centered(p,item.value,19,programY,274,11.5);
-    else paragraph(p,item.value,21,programY,270,item.height+1,11.5,font,11.5);
+    else if(item.kind==='center'){
+      const title=item.value,size=11.5,width=font.widthOfTextAtSize(clean(title),size),dotWidth=font.widthOfTextAtSize('.',size);
+      const dots='.'.repeat(Math.max(0,Math.floor((274-width-16)/(2*dotWidth))));
+      centered(p,dots+'  '+title+'  '+dots,19,programY,274,size);
+    }else lines(item.value,11.5,270).forEach((line,index)=>centered(p,line,19,programY+index*13.8,274,11.5));
     programY+=item.height+gap;
   }
   // Information panel. Pipe-separated rows make the three columns editable.
