@@ -2,3 +2,26 @@
 
 /* Display the exact PDF instead of a separate HTML approximation. */
 #paper{display:block;position:relative}#paper canvas{display:block;width:100%;height:auto}#paper[aria-busy="true"]{opacity:.5}#previewStatus{font-size:11px;line-height:1.6;color:#5d725d;min-height:18px;margin:12px 0 0}
+
+/* Larger editor type and a preview that follows the page on desktop. */
+.workspace{overflow:visible;align-items:start;grid-template-columns:clamp(360px,32vw,460px) minmax(0,1fr)}
+.workspace aside{min-width:0;font-size:16px;line-height:1.5}
+.asidehead{font-size:12px;line-height:1.5;gap:12px}
+nav{gap:7px}nav button{font-size:14px;padding:11px 13px}
+#editor label,#editor label.field{font-size:15px!important;line-height:1.5}
+#editor summary,#editor legend{font-size:16px!important;line-height:1.5}
+#editor input,#editor textarea,#editor select{font-size:16px;line-height:1.5;min-height:44px}
+#editor input[type=radio],#editor input[type=checkbox]{min-height:20px;min-width:20px;accent-color:#315b4b;flex-shrink:0}
+#editor .note,aside>.note{font-size:14px;line-height:1.6;color:#536355}
+#editor .secondary,.drafttools .secondary{font-size:14px;line-height:1.4;padding:11px 13px;min-height:44px}
+#editor strong{font-size:15px;line-height:1.5}
+#editor button:disabled{opacity:.45;cursor:default}
+.preview{position:sticky;top:16px;align-self:start;min-height:calc(100dvh - 32px);max-height:calc(100dvh - 32px);overflow:auto;display:flex;flex-direction:column;justify-content:center;padding:24px;border-radius:0 10px 10px 0}
+.previewhead{gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.previewhead select{font-size:14px;width:220px;margin-top:0;min-height:44px}
+#paper{width:100%;flex-shrink:0}
+#previewStatus,.printnote,#status{font-size:13px;line-height:1.5}
+.preview h2{font-size:25px}.preview .eyebrow{font-size:11px}
+@media(min-width:751px) and (max-height:650px){.preview{justify-content:flex-start;padding:16px}.previewhead{margin-bottom:10px}.preview h2{font-size:21px}}
+@media(max-width:1000px) and (min-width:751px){.workspace{grid-template-columns:350px minmax(0,1fr)}aside{padding:18px}.preview{padding:16px}.previewhead{display:block}.previewhead select{max-width:100%}.printnote{display:block}}
+@media(max-width:750px){.workspace{display:block}.preview{position:static;min-height:0;max-height:none;overflow:visible;border-radius:0 0 10px 10px;padding:18px}.workspace aside{border-right:0}.previewhead{display:flex}.previewhead select{width:100%}}
