@@ -2,3 +2,7 @@
 .program-preview{background:#eef0ea;border:1px solid #d6ded4;border-radius:8px;padding:10px;margin-bottom:18px;text-align:center}.program-preview .preview-open{display:block;padding:0;margin:0 auto;background:white;width:100%;max-width:360px;overflow:hidden;border-radius:3px;box-shadow:0 2px 8px #0002}.program-preview canvas{display:block;width:100%;height:auto}.program-preview p{font-size:13px;margin:8px 0 0}.auth-actions{display:flex;gap:10px;flex-wrap:wrap}.test-payment{border:2px solid #b49353;background:#fff9ec}.auth-status{white-space:pre-wrap}code{overflow-wrap:anywhere}
 
 .test-payment label{display:flex;align-items:center;gap:10px}.test-payment input[type=checkbox]{width:20px;height:20px;flex-shrink:0;accent-color:#315b4b}
+
+.test-payment label:has(input[type=date]){display:block}.plans .plan h3{font:23px Georgia,serif}.plan button{margin-top:12px}
+
+.one-time-plans{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:700px){.one-time-plans{grid-template-columns:1fr}}
