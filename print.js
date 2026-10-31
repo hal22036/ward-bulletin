@@ -1,7 +1,7 @@
 /* Legal landscape, three-panel bulletin, based on the ward's November 1 reference. */
-window.makePdf = async function () {
+window.makePdf = async function (settings={}) {
   const {PDFDocument, StandardFonts}=PDFLib;
-  const letter=data.paperSize==='letter',monochrome=data.printColor==='bw';
+  const letter=(settings.paperSize||data.paperSize)==='letter',monochrome=(settings.printColor||data.printColor)==='bw';
   const rgb=(r,g,b)=>{if(monochrome){const v=.2126*r+.7152*g+.0722*b;return PDFLib.rgb(v,v,v)}return PDFLib.rgb(r,g,b)};
   const doc=await PDFDocument.create();
   const font=await doc.embedFont(StandardFonts.Helvetica), bold=await doc.embedFont(StandardFonts.HelveticaBold), italic=await doc.embedFont(StandardFonts.HelveticaOblique);
@@ -158,7 +158,7 @@ window.makePdf = async function () {
     const iconEvents=ee.filter(e=>e.art!=null),textEvents=ee.filter(e=>e.art==null).map(e=>({event:e,rows:lines(e.text,7.5,cw-9)})),textHeight=textEvents.reduce((sum,e)=>sum+e.rows.length*8+2,0),iconHeight=bodyHeight-textHeight-(textEvents.length&&iconEvents.length?3:0);
     if(textHeight>bodyHeight)throw Error('Too many events in calendar day '+key+'. Shorten event names or hide an item.');
     if(iconEvents.length){
-      const gap=3,hasTimes=iconEvents.some(e=>calendarTime(e.time)),timeBand=hasTimes?9:0,minTimeWidth=Math.max(0,...iconEvents.map(e=>font.widthOfTextAtSize(calendarTime(e.time),6.5)));
+      const gap=3,hasTimes=iconEvents.some(e=>e.calendarText!=='no'&&calendarTime(e.time)),timeBand=hasTimes?9:0,minTimeWidth=Math.max(0,...iconEvents.map(e=>font.widthOfTextAtSize(e.calendarText==='no'?'':calendarTime(e.time),6.5)));
       let layout=null;
       for(let cols=1;cols<=iconEvents.length;cols++){
         const rowCount=Math.ceil(iconEvents.length/cols),tileWidth=(bodyWidth-gap*(cols-1))/cols,tileHeight=(iconHeight-gap*(rowCount-1))/rowCount,score=Math.min(tileWidth,tileHeight-timeBand);
@@ -166,7 +166,7 @@ window.makePdf = async function () {
       }
       if(!layout||layout.score<14)throw Error('Too many icon events in calendar day '+key+'. Hide an item or use shorter text-only entries.');
       for(let eventIndex=0;eventIndex<iconEvents.length;eventIndex++){
-        const event=iconEvents[eventIndex],row=Math.floor(eventIndex/layout.cols),col=eventIndex%layout.cols,countInRow=Math.min(layout.cols,iconEvents.length-row*layout.cols),rowWidth=countInRow*layout.tileWidth+(countInRow-1)*gap,tileX=bodyX+(bodyWidth-rowWidth)/2+col*(layout.tileWidth+gap),tileTop=bodyTop+row*(layout.tileHeight+gap),time=calendarTime(event.time),pictureHeight=layout.tileHeight-(time?9:0),art=event.art;
+        const event=iconEvents[eventIndex],row=Math.floor(eventIndex/layout.cols),col=eventIndex%layout.cols,countInRow=Math.min(layout.cols,iconEvents.length-row*layout.cols),rowWidth=countInRow*layout.tileWidth+(countInRow-1)*gap,tileX=bodyX+(bodyWidth-rowWidth)/2+col*(layout.tileWidth+gap),tileTop=bodyTop+row*(layout.tileHeight+gap),time=event.calendarText==='no'?'':calendarTime(event.time),pictureHeight=layout.tileHeight-(time?9:0),art=event.art;
         const path=String(art).startsWith('data:image/')?art:generalIcons[String(art)]?`assets/icons/${generalIcons[String(art)]}.png`:/^\d+$/.test(String(art))?`assets/art-${art}.png`:`assets/${art}.png`;
         await picture(a,path,tileX,tileTop,layout.tileWidth,pictureHeight);
         if(time)centered(a,time,tileX,tileTop+layout.tileHeight-7.5,layout.tileWidth,6.5);
