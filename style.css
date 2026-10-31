@@ -43,3 +43,5 @@ header .brand{font-size:23px}.current-unit{font:clamp(23px,2.2vw,35px) Georgia,s
 @media(max-width:500px){header{padding:18px;gap:14px}header .brand{font-size:18px}.header-actions button{padding:11px 12px;font-size:12px}.current-unit{font-size:26px}}
 
 #paper iframe.digital-frame{display:block;width:100%;height:calc(100dvh - 220px);min-height:400px;border:0;background:white}.previewhead select{max-width:100%;width:260px}
+
+#tabs .digital-site-link{display:inline-block;padding:11px 13px;border-radius:5px;background:#e8eee5;color:#315b4b;font:600 14px system-ui,sans-serif;text-decoration:none;line-height:normal}#tabs .digital-site-link:hover{background:#dbe6d7}#tabs .digital-site-link:focus-visible{outline:3px solid #315b4b;outline-offset:3px}#tabs .digital-site-link.disabled{opacity:.5;cursor:default}
