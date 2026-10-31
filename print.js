@@ -76,7 +76,7 @@ window.makePdf = async function () {
   const d=meetingDate(),year=d.getFullYear(),month=d.getMonth(),first=new Date(year,month,1),start=first.getDay(),days=new Date(year,month+1,0).getDate(),rows=6,x0=366,calW=622,cw=calW/7,gridTop=129,ch=436/rows;
   rect(a,364,56,626,35,gray,gray);centered(a,d.toLocaleDateString('en-US',{month:'long'})+'/'+new Date(year,month+1,1).toLocaleDateString('en-US',{month:'long'}),366,57,622,25,bold);
   ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'].forEach((day,i)=>{rect(a,x0+i*cw,106,cw,23);centered(a,day,x0+i*cw+2,109,cw-4,12)});
-  const allEvents=events();for(let i=0;i<rows*7;i++){const date=new Date(year,month,i-start+1),key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,x=x0+i%7*cw,top=gridTop+Math.floor(i/7)*ch;rect(a,x,top,cw,ch);text(a,String(date.getDate()),x+5,top+1,12);if(date.getDate()===1&&date.getMonth()!==month)text(a,date.toLocaleDateString('en-US',{month:'long'}).toUpperCase(),x+15,top+4,8,bold);const ee=allEvents.filter(e=>e.date===key);let ey=top+17;for(const e of ee){const art=e.art;
+  const allEvents=events();for(let i=0;i<rows*7;i++){const date=new Date(year,month,i-start+1),key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,x=x0+i%7*cw,top=gridTop+Math.floor(i/7)*ch;rect(a,x,top,cw,ch);text(a,String(date.getDate()),x+5,top+1,12);if(date.getDate()===1)text(a,date.toLocaleDateString('en-US',{month:'long'}).toUpperCase(),x+15,top+4,8,bold);const ee=allEvents.filter(e=>e.date===key);let ey=top+17;for(const e of ee){const art=e.art;
  const hasArt=art!=null,eventLines=hasArt?[]:lines(e.text,7.5,cw-9);
  const imageHeight=Math.min(28,(ch-20)/Math.max(1,ee.length)-2),height=hasArt?imageHeight:eventLines.length*8;
  if(ey+height>top+ch-2)throw Error('Too many events in calendar day '+key+'. Shorten event names or hide an item.');
@@ -84,7 +84,17 @@ window.makePdf = async function () {
  else eventLines.forEach((line,index)=>text(a,line,x+5,ey+index*8,7.5));ey+=height+2;
  }}
 
-  const nextIndex=start+days;for(let row=Math.floor(nextIndex/7);row<6;row++){const col=row===Math.floor(nextIndex/7)?nextIndex%7:0;rect(a,x0+col*cw,gridTop+row*ch,(7-col)*cw,ch,null,rgb(.85,.15,.08),1.5);}
+  const nextIndex=start+days;
+  if(data.monthBorderMode!=='off'&&nextIndex<rows*7){
+    const hex=/^#[0-9a-f]{6}$/i.test(data.monthBorderColor||'')?data.monthBorderColor:'#b85432';
+    const border=data.monthBorderMode==='color'?rgb(parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255):black;
+    const edge=(x1,t1,x2,t2)=>a.drawLine({start:{x:x1,y:612-t1},end:{x:x2,y:612-t2},color:border,thickness:2.5});
+    const row=Math.floor(nextIndex/7),col=nextIndex%7,left=x0+col*cw,top=gridTop+row*ch,right=x0+calW,bottom=gridTop+rows*ch,step=top+ch;
+    edge(left,top,right,top);edge(right,top,right,bottom);edge(right,bottom,row===rows-1?left:x0,bottom);
+    if(row===rows-1)edge(left,bottom,left,top);
+    else if(col===0)edge(x0,bottom,x0,top);
+    else{edge(x0,bottom,x0,step);edge(x0,step,left,step);edge(left,step,left,top);}
+  }
   const endDate=new Date(year,month,rows*7-start),after=allEvents.filter(e=>e.date>endDate.toISOString().slice(0,10));if(after.length)paragraph(a,'Future events: '+after.sort((a,b)=>a.date.localeCompare(b.date)).map(futureEventText).join(' / '),367,574,619,23,8.5,font,8);
   return {bytes:await doc.save(),warnings:[...new Set(warnings)]};
 };
