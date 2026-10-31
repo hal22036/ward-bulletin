@@ -5,8 +5,34 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', imp
 let revision = 0, timer, running = false;
 const paper = document.querySelector('#paper');
 const message = document.querySelector('#previewStatus');
+const previewViewport=document.querySelector('#previewViewport');
+const zoomSelect=document.querySelector('#previewZoom'),zoomIn=document.querySelector('#zoomIn'),zoomOut=document.querySelector('#zoomOut'),zoomFit=document.querySelector('#zoomFit');
+const zoomLevels=[1,1.25,1.5,2,2.5,3];let previewZoom=1,panStart=null;
+function applyPreviewZoom(reset=false){
+ const digital=document.querySelector('#side').value==='digital',factor=digital?1:previewZoom;
+ if(paper.style)paper.style.width=(factor*100)+'%';
+ if(previewViewport?.classList){previewViewport.classList.toggle('is-zoomed',!digital&&factor>1);previewViewport.classList.toggle('is-digital',digital);}
+ if(zoomSelect){zoomSelect.value=String(previewZoom);zoomSelect.disabled=digital;}if(zoomIn)zoomIn.disabled=digital||previewZoom>=3;if(zoomOut)zoomOut.disabled=digital||previewZoom<=1;if(zoomFit)zoomFit.disabled=digital;
+ if(reset&&previewViewport){previewViewport.scrollLeft=0;previewViewport.scrollTop=0;}
+}
+function changePreviewZoom(value){
+ if(!zoomLevels.includes(Number(value)))return;
+ const viewport=previewViewport,old=previewZoom,x=viewport?(viewport.scrollLeft+viewport.clientWidth/2)/old:0,y=viewport?(viewport.scrollTop+viewport.clientHeight/2)/old:0;previewZoom=Number(value);applyPreviewZoom(previewZoom===1);
+ if(viewport&&previewZoom!==1){const center=()=>{viewport.scrollLeft=Math.max(0,x*previewZoom-viewport.clientWidth/2);viewport.scrollTop=Math.max(0,y*previewZoom-viewport.clientHeight/2);};if(typeof requestAnimationFrame==='function')requestAnimationFrame(center);else center();}
+}
+if(zoomSelect)zoomSelect.onchange=()=>changePreviewZoom(zoomSelect.value);
+if(zoomIn)zoomIn.onclick=()=>changePreviewZoom(zoomLevels[Math.min(zoomLevels.length-1,zoomLevels.indexOf(previewZoom)+1)]);
+if(zoomOut)zoomOut.onclick=()=>changePreviewZoom(zoomLevels[Math.max(0,zoomLevels.indexOf(previewZoom)-1)]);
+if(zoomFit)zoomFit.onclick=()=>changePreviewZoom(1);
+if(previewViewport){
+ previewViewport.onpointerdown=event=>{if(previewZoom<=1||event.button!==0||event.target.tagName!=='CANVAS')return;panStart={id:event.pointerId,x:event.clientX,y:event.clientY,left:previewViewport.scrollLeft,top:previewViewport.scrollTop};previewViewport.setPointerCapture(event.pointerId);previewViewport.classList.add('is-dragging');event.preventDefault();};
+ previewViewport.onpointermove=event=>{if(!panStart||panStart.id!==event.pointerId)return;previewViewport.scrollLeft=panStart.left+panStart.x-event.clientX;previewViewport.scrollTop=panStart.top+panStart.y-event.clientY;};
+ const endPan=()=>{panStart=null;previewViewport.classList.remove('is-dragging');};previewViewport.onpointerup=endPan;previewViewport.onpointercancel=endPan;
+}
+
 
 window.renderPrintPreview = function () {
+  applyPreviewZoom();
   revision++;
   clearTimeout(timer);
   paper.setAttribute('aria-busy', 'true');
@@ -35,7 +61,7 @@ async function refresh() {
     });
     const pdf = await documentTask.promise;
     const page = await pdf.getPage(pageNumber);
-    const viewport = page.getViewport({ scale: 2 });
+    const viewport = page.getViewport({ scale: 3 });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
