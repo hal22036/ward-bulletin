@@ -177,10 +177,12 @@ window.makePdf = async function (settings={}) {
 
 
   if(data.monthBorderMode!=='off'){
-    const hex=/^#[0-9a-f]{6}$/i.test(data.monthBorderColor||'')?data.monthBorderColor:'#b85432',border=data.monthBorderMode==='color'?rgb(parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255):black;
-    const edge=(x1,t1,x2,t2)=>a.drawLine({start:{x:x1,y:612-t1},end:{x:x2,y:612-t2},color:border,thickness:2.5});
-    const monthKey=date=>date.getFullYear()+'-'+date.getMonth(),firstMonth=monthKey(first),keys=dates.map(monthKey);
-    for(let i=0;i<dates.length;i++)if(keys[i]!==firstMonth){const row=Math.floor(i/7),col=i%7,x=x0+col*cw,top=gridTop+row*ch,key=keys[i];if(row===0||keys[i-7]!==key)edge(x,top,x+cw,top);if(row===4||keys[i+7]!==key)edge(x,top+ch,x+cw,top+ch);if(col===0||keys[i-1]!==key)edge(x,top,x,top+ch);if(col===6||keys[i+1]!==key)edge(x+cw,top,x+cw,top+ch);}
+    const monthKey=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0'),keys=dates.map(monthKey),counts={};keys.forEach(key=>counts[key]=(counts[key]||0)+1);const mainMonth=Object.keys(counts).reduce((best,key)=>counts[key]>counts[best]?key:best),smallMonths=Object.keys(counts).filter(key=>key!==mainMonth);
+    const fallback=/^#[0-9a-f]{6}$/i.test(data.monthBorderColor||'')?data.monthBorderColor:'#b85432';
+    for(let i=0;i<dates.length;i++)if(keys[i]!==mainMonth){const key=keys[i],saved=(data.monthBorderColors||{})[key],hex=/^#[0-9a-f]{6}$/i.test(saved||'')?saved:smallMonths.indexOf(key)>0?'#416d91':fallback,border=data.monthBorderMode==='color'?rgb(parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255):black;
+      const edge=(x1,t1,x2,t2)=>a.drawLine({start:{x:x1,y:612-t1},end:{x:x2,y:612-t2},color:border,thickness:2.5});
+      const row=Math.floor(i/7),col=i%7,x=x0+col*cw,top=gridTop+row*ch;if(row===0||keys[i-7]!==key)edge(x,top,x+cw,top);if(row===4||keys[i+7]!==key)edge(x,top+ch,x+cw,top+ch);if(col===0||keys[i-1]!==key)edge(x,top,x,top+ch);if(col===6||keys[i+1]!==key)edge(x+cw,top,x+cw,top+ch);
+    }
   }
   const endDate=range.through,after=allEvents.filter(e=>e.date>dateKey(endDate));if(after.length){const future='Future events: '+after.sort((a,b)=>a.date.localeCompare(b.date)).map(futureEventText).join(' / ');if(lines(future,8,619).length*9.6>23)throw Error('Future events are too full to fit below the calendar. Shorten event names or hide some events.');paragraph(a,future,367,574,619,23,8.5,font,8);}
   }
