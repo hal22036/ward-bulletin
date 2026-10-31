@@ -70,8 +70,13 @@ window.makePdf = async function () {
   schedule.forEach((row,i)=>{const top=514+i*10.5;paragraph(p,row.className,351,top,classWidth,11,9,font,8);paragraph(p,row.time,351+classWidth+5,top,timeWidth,11,9,font,8);});
   if(noteWidth){rect(p,556,502,86,73);centered(p,'NOTES',558,504,82,9);paragraph(p,notes,560,519,78,53,8.5,font,7);}
   paragraph(p,data.fifthSunday||'',351,586,290,11,8.5,font,8);
-  // Cover: preserve the original masthead, art and QR code.
-  await picture(p,'assets/masthead.png',721,29,255,80);await picture(p,data.cover,722,113,252,336);centered(p,data.ward.toUpperCase(),685,450,315,21);centered(p,data.stake.toUpperCase(),685,478,315,16);await picture(p,'assets/ward-qr.png',824,520,51,51);await picture(p,'assets/scan-caption.png',807,574,89,27);
+  // Fixed Church masthead with optional quote and QR image.
+  const quote=String(data.coverQuote||'').trim(),showQr=data.coverShowQr==='yes'&&/^data:image\/(png|jpeg);base64,/.test(data.coverQr||'');
+  await picture(p,'assets/masthead.png',721,29,255,80);
+  await picture(p,data.cover,722,113,252,quote?282:336);
+  if(quote){let size=12,quoteLines=lines(quote,size,274);while(quoteLines.length*size*1.2>45&&size>9){size-=.25;quoteLines=lines(quote,size,274);}if(quoteLines.length*size*1.2>45)throw Error('Shorten the cover quote so it fits clearly below the image.');quoteLines.forEach((line,i)=>centered(p,line,705,403+i*size*1.2,283,size,italic));}
+  centered(p,data.ward.toUpperCase(),685,quote?455:450,315,21);centered(p,data.stake.toUpperCase(),685,quote?485:478,315,16);
+  if(showQr){await picture(p,data.coverQr,823,528,55,55);centered(p,'Scan for more',794,587,113,9,italic);}
   // Announcements keep their own column and the calendar occupies two panels.
   const a=pages[0];rounded(a,10,33,323,559,18);centered(a,'ANNOUNCEMENTS',17,37,309,22,bold);
   const notices=typeof readNews==='function'?readNews().filter(n=>n.show!==false&&(n.title.trim()||n.body.trim())):data.announcements.split(/\n\s*\n/).filter(Boolean).map(text=>{const [title,...body]=text.split('\n');return {title,body:body.join('\n'),icon:'auto'}});if(letter){const first=meetingDate();first.setDate(1);first.setDate(first.getDate()-first.getDay());first.setDate(first.getDate()+41);const future=events().filter(e=>e.date>dateKey(first));if(future.length)notices.push({title:'Future events',body:future.map(futureEventText).join(' / '),icon:''});}let y=69;
