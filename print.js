@@ -77,18 +77,21 @@ window.makePdf = async function (settings={}) {
   }
   // Fit filled Ward sections to their content, wrapping columns without clipping.
   const wardData=readWard(),leaders=wardData.leadership.filter(row=>row.calling||row.name||row.phone),missionaries=wardData.missionaries.filter(row=>[row.name,row.mission,row.address1,row.address2,row.address3,row.email].some(value=>String(value||'').trim())).map(row=>[row.name,row.mission,row.address1,row.address2,row.address3,row.email].map(value=>String(value||'')).join('\n')),schedule=wardData.schedule.filter(row=>row.className||row.time),notes=String(wardData.notes||'').trim(),notesRows=(wardData.notesRows||[]).filter(row=>row.className||row.room),hasNotes=!!(notes||notesRows.length);
-  if(missionaries.length>4)throw Error('The missionary panel fits up to four full contact entries. Remove an entry or shorten the information before exporting.');
+  if(missionaries.length>4&&wardSection('missionaries').mode!=='text')throw Error('The missionary panel fits up to four full contact entries. Remove an entry or shorten the information before exporting.');
   const drawRows=(rows,x,y,size,face=font,width=0)=>rows.forEach((line,i)=>width?centered(p,line,x,y+i*styleSize(size)*1.2,width,size,face):text(p,line,x,y+i*styleSize(size)*1.2,size,face));
+  function wardHeading(key,size,width,minBand=27){const titleRows=String(wardSection(key).title||'').trim()?lines(wardSection(key).title,size,width,bold):[];return {titleRows,titleSize:size,band:titleRows.length?Math.max(minBand,titleRows.length*styleSize(size)*1.2+10):7};}
   function wardPlan(density){
     const blocks=[],leaderSize=8.1-density*.6,missionSize=9-density*1.5,bodySize=10.5-density*2,scheduleSize=9-density,smallSize=9-density,notesSize=8.5-density;
-    useSection('leadership');if(leaders.length){const band=Math.max(27,styleSize(12)*1.2+10),rows=leaders.map(row=>{const cells=[lines(row.calling,leaderSize,103),lines(row.name,leaderSize,103),lines(row.phone,leaderSize,66)];return {cells,height:Math.max(...cells.map(c=>c.length))*styleSize(leaderSize)*1.2};});blocks.push({kind:'leadership',band,rows,size:leaderSize,height:band+rows.reduce((n,r)=>n+r.height,0)});}
-    useSection('interviews');if(data.interviews.trim()){const rows=lines(data.interviews,smallSize,274);blocks.push({kind:'interviews',rows,size:smallSize,height:rows.length*styleSize(smallSize)*1.2+10});}
-    useSection('missionaries');if(missionaries.length){const band=Math.max(26,styleSize(10)*1.2+10),full=missionaries.length===1,rows=missionaries.map((content,i)=>lines(content,missionSize,full||missionaries.length===3&&i===2?274:135));const firstHeight=Math.max(...rows.slice(0,2).map(r=>r.length))*styleSize(missionSize)*1.2,secondHeight=rows.length>2?Math.max(...rows.slice(2).map(r=>r.length))*styleSize(missionSize)*1.2:0;blocks.push({kind:'missionaries',band,rows,size:missionSize,firstHeight,secondHeight,height:band+firstHeight+(secondHeight?secondHeight+10:0)});}
-    useSection('temple');if(data.temple.trim()){const band=Math.max(27,styleSize(12)*1.2+10),rows=lines(data.temple,bodySize,275);blocks.push({kind:'temple',band,rows,size:bodySize,height:band+rows.length*styleSize(bodySize)*1.2});}
-    if(schedule.length||hasNotes||data.fifthSunday.trim()){
+    const fifthPlan=()=>{const fifth=String(data.fifthSunday||'').trim()?lines(data.fifthSunday,8,282):[],fifthTitle=fifth.length&&wardSection('fifthSunday').title.trim()?lines(wardSection('fifthSunday').title,8,282,bold):[],fifthTitleHeight=fifthTitle.length*styleSize(8)*1.2;return {fifth,fifthTitle,fifthTitleHeight,fifthHeight:fifth.length?(fifth.length+fifthTitle.length)*styleSize(8)*1.2+9:0};};
+    const generalPlan=(key,kind,size)=>{const section=wardSection(key);if(section.mode!=='text')return false;useSection(kind);const rows=section.body.trim()?lines(section.body,size,274):[],heading=wardHeading(key,12,282),extra=key==='information'?fifthPlan():{fifth:[],fifthTitle:[],fifthTitleHeight:0,fifthHeight:0};if(rows.length||extra.fifth.length)blocks.push({kind,general:true,...heading,rows,size,...extra,bodyHeight:rows.length*styleSize(size)*1.2,height:heading.band+rows.length*styleSize(size)*1.2+extra.fifthHeight});return true;};
+    useSection('leadership');if(!generalPlan('leadership','leadership',bodySize)&&leaders.length){const heading=wardHeading('leadership',12,286),rows=leaders.map(row=>{const cells=[lines(row.calling,leaderSize,103),lines(row.name,leaderSize,103),lines(row.phone,leaderSize,66)];return {cells,height:Math.max(...cells.map(c=>c.length))*styleSize(leaderSize)*1.2};});blocks.push({kind:'leadership',...heading,rows,size:leaderSize,height:heading.band+rows.reduce((n,r)=>n+r.height,0)});}
+    useSection('interviews');if(data.interviews.trim()){const heading=wardHeading('interviews',10,274,0),rows=lines(data.interviews,smallSize,274);blocks.push({kind:'interviews',...heading,rows,size:smallSize,height:rows.length*styleSize(smallSize)*1.2+heading.band+3});}
+    useSection('missionaries');if(!generalPlan('missionaries','missionaries',bodySize)&&missionaries.length){const heading=wardHeading('missionaries',10,284,26),full=missionaries.length===1,rows=missionaries.map((content,i)=>lines(content,missionSize,full||missionaries.length===3&&i===2?274:135));const firstHeight=Math.max(...rows.slice(0,2).map(r=>r.length))*styleSize(missionSize)*1.2,secondHeight=rows.length>2?Math.max(...rows.slice(2).map(r=>r.length))*styleSize(missionSize)*1.2:0;blocks.push({kind:'missionaries',...heading,rows,size:missionSize,firstHeight,secondHeight,height:heading.band+firstHeight+(secondHeight?secondHeight+10:0)});}
+    useSection('temple');if(data.temple.trim()){const heading=wardHeading('temple',12,288),rows=lines(data.temple,bodySize,275);blocks.push({kind:'temple',...heading,rows,size:bodySize,height:heading.band+rows.length*styleSize(bodySize)*1.2});}
+    if(!generalPlan('information','schedule',bodySize)&&(schedule.length||hasNotes||data.fifthSunday.trim())){
       useSection('notes');const titleRows=hasNotes&&String(wardData.notesTitle||'').trim()?lines(wardData.notesTitle,9,78,bold):[],noteRows=notes?lines(notes,notesSize,78):[],classRows=notesRows.map(row=>{const cells=[lines(row.className,notesSize,45),lines(row.room,notesSize,26)];return {cells,height:Math.max(...cells.map(cell=>cell.length))*styleSize(notesSize)*1.2};}),titleHeight=titleRows.length*styleSize(9)*1.2,noteHeader=classRows.length?styleSize(8)*1.2+3:0,noteHeight=hasNotes?titleHeight+5+noteHeader+classRows.reduce((sum,row)=>sum+row.height,0)+(noteRows.length?noteRows.length*styleSize(notesSize)*1.2+3:0):0;
-      useSection('schedule');const band=Math.max(27,styleSize(10)*1.2+10),classWidth=hasNotes?102:138,timeWidth=hasNotes?91:143,rows=schedule.map(row=>{const cells=[lines(row.className,scheduleSize,classWidth),lines(row.time,scheduleSize,timeWidth)];return {cells,height:Math.max(...cells.map(c=>c.length))*styleSize(scheduleSize)*1.2};}),fifth=String(data.fifthSunday||'').trim()?lines(data.fifthSunday,8,282):[],bodyHeight=Math.max(rows.reduce((n,r)=>n+r.height,0),noteHeight);
-      blocks.push({kind:'schedule',band,rows,noteRows,titleRows,titleHeight,noteHeader,classRows,size:scheduleSize,notesSize,classWidth,bodyHeight,fifth,height:band+bodyHeight+(fifth.length?fifth.length*styleSize(8)*1.2+9:0)});
+      useSection('schedule');const heading=wardHeading('information',10,286),classWidth=hasNotes?102:138,timeWidth=hasNotes?91:143,rows=schedule.map(row=>{const cells=[lines(row.className,scheduleSize,classWidth),lines(row.time,scheduleSize,timeWidth)];return {cells,height:Math.max(...cells.map(c=>c.length))*styleSize(scheduleSize)*1.2};}),extra=fifthPlan(),bodyHeight=Math.max(rows.reduce((n,r)=>n+r.height,0),noteHeight);
+      blocks.push({kind:'schedule',...heading,rows,noteRows,noteTitleRows:titleRows,titleHeight,noteHeader,classRows,size:scheduleSize,notesSize,classWidth,bodyHeight,...extra,height:heading.band+bodyHeight+extra.fifthHeight});
     }
     return blocks;
   }
@@ -99,22 +102,26 @@ window.makePdf = async function (settings={}) {
   if(density>0)warnings.push('Ward/branch information uses smaller text');
   let wardY=17+Math.min(55,Math.max(0,(581-wardHeight())/2));
   for(const block of blocks){
-    useSection(block.kind);if(block.kind==='leadership'){
-      rect(p,347,wardY,298,block.height,null,black,1.5);centered(p,'Ward Leadership',353,wardY+4,286,12,bold);let y=wardY+block.band-5;
+    useSection(block.kind);if(block.general){
+      if(block.kind==='missionaries')rounded(p,346,wardY,302,block.height,15);else rect(p,347,wardY,300,block.height,null,black,1);
+      drawRows(block.titleRows,353,wardY+4,block.titleSize,bold,286);drawRows(block.rows,360,wardY+block.band-5,block.size);
+      if(block.fifth.length){drawRows(block.fifthTitle,351,wardY+block.band+block.bodyHeight,8,bold);drawRows(block.fifth,351,wardY+block.band+block.bodyHeight+block.fifthTitleHeight,8);}
+    }else if(block.kind==='leadership'){
+      rect(p,347,wardY,298,block.height,null,black,1.5);drawRows(block.titleRows,353,wardY+4,block.titleSize,bold,286);let y=wardY+block.band-5;
       for(const row of block.rows){row.cells.forEach((cell,i)=>drawRows(cell,[355,464,574][i],y,block.size));y+=row.height;}
     }else if(block.kind==='interviews'){
-      rule(p,355,wardY,284,black,1);drawRows(block.rows,360,wardY+5,block.size);rule(p,355,wardY+block.height,284,black,1);
+      rule(p,355,wardY,284,black,1);drawRows(block.titleRows,360,wardY+4,block.titleSize,bold,274);drawRows(block.rows,360,wardY+block.band-2,block.size);rule(p,355,wardY+block.height,284,black,1);
     }else if(block.kind==='missionaries'){
-      rounded(p,346,wardY,302,block.height,15);const title='MISSIONARIES FROM THE '+data.ward.toUpperCase();centered(p,measure(font,clean(title),8)>284?'MISSIONARIES':title,351,wardY+4,292,10,bold);
+      rounded(p,346,wardY,302,block.height,15);drawRows(block.titleRows,351,wardY+4,block.titleSize,bold,292);
       for(let i=0;i<block.rows.length;i++){const bottom=i>=2,y=wardY+block.band-5+(bottom?block.firstHeight+10:0),full=block.rows.length===1||block.rows.length===3&&i===2;drawRows(block.rows[i],full?360:357+(i%2)*145,y,block.size,font,full?274:0);}
       if(block.secondHeight)rule(p,355,wardY+block.band+block.firstHeight,280,black,1);
     }else if(block.kind==='temple'){
-      rect(p,346,wardY,302,block.height,null,black,1);centered(p,'Las Vegas Nevada Temple',353,wardY+4,288,12,bold);drawRows(block.rows,360,wardY+block.band-5,block.size);
+      rect(p,346,wardY,302,block.height,null,black,1);drawRows(block.titleRows,353,wardY+4,block.titleSize,bold,288);drawRows(block.rows,360,wardY+block.band-5,block.size);
     }else{
-      rect(p,347,wardY,300,block.height,null,black,1);centered(p,meetingDate().getFullYear()+' Meeting Schedule',351,wardY+4,286,10,bold);let y=wardY+block.band-5;
+      rect(p,347,wardY,300,block.height,null,black,1);drawRows(block.titleRows,351,wardY+4,block.titleSize,bold,286);let y=wardY+block.band-5;
       for(const row of block.rows){drawRows(row.cells[0],351,y,block.size);drawRows(row.cells[1],351+block.classWidth+5,y,block.size);y+=row.height;}
-      if(hasNotes){useSection('notes');const noteTop=wardY+block.band-7;rect(p,556,noteTop,86,block.bodyHeight+5);drawRows(block.titleRows,560,noteTop+2,9,bold,78);let noteY=noteTop+block.titleHeight+5;if(block.classRows.length){text(p,'Class',560,noteY,8,bold);text(p,'Room #',608,noteY,8,bold);noteY+=block.noteHeader;for(const row of block.classRows){drawRows(row.cells[0],560,noteY,block.notesSize);row.cells[1].forEach((line,i)=>text(p,line,638-measure(font,line,block.notesSize),noteY+i*styleSize(block.notesSize)*1.2,block.notesSize));noteY+=row.height;}}if(block.noteRows.length)drawRows(block.noteRows,560,noteY+3,block.notesSize);useSection('schedule');}
-      if(block.fifth.length)drawRows(block.fifth,351,wardY+block.band+block.bodyHeight,8);
+      if(hasNotes){useSection('notes');const noteTop=wardY+block.band-7;rect(p,556,noteTop,86,block.bodyHeight+5);drawRows(block.noteTitleRows,560,noteTop+2,9,bold,78);let noteY=noteTop+block.titleHeight+5;if(block.classRows.length){text(p,'Class',560,noteY,8,bold);text(p,'Room #',608,noteY,8,bold);noteY+=block.noteHeader;for(const row of block.classRows){drawRows(row.cells[0],560,noteY,block.notesSize);row.cells[1].forEach((line,i)=>text(p,line,638-measure(font,line,block.notesSize),noteY+i*styleSize(block.notesSize)*1.2,block.notesSize));noteY+=row.height;}}if(block.noteRows.length)drawRows(block.noteRows,560,noteY+3,block.notesSize);useSection('schedule');}
+      if(block.fifth.length){drawRows(block.fifthTitle,351,wardY+block.band+block.bodyHeight,8,bold);drawRows(block.fifth,351,wardY+block.band+block.bodyHeight+block.fifthTitleHeight,8);}
     }
     wardY+=block.height+8;
   }
