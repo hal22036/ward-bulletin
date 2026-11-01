@@ -69,3 +69,5 @@ header .brand{flex-direction:column;align-items:center;justify-self:start;gap:4p
 #textAppearanceSettings>details>.note,#textAppearanceSettings>details>details{margin-left:12px;margin-right:12px}
 
 .font-color-controls{border:1px solid #cdbbd1;border-radius:8px;padding:12px;margin:18px 0}.font-color-controls legend{font-size:16px;font-weight:700;color:#65436b}.font-color-controls input[type=color]{width:100%;min-height:50px;padding:4px;cursor:pointer}.font-color-controls input[type=text]{font:16px ui-monospace,monospace;text-transform:uppercase}.font-color-presets{display:flex;flex-wrap:wrap;gap:7px}.font-color-presets button{display:inline-flex;align-items:center;gap:6px;background:white;color:#263d34;border:1px solid #bac5b5;border-radius:6px;padding:8px;font-size:12px;min-height:38px}.font-color-presets span{display:inline-block;width:18px;height:18px;border:1px solid #0003;border-radius:50%}
+
+.replacement-notice{background:#fff3d9;border:2px solid #ab7b24;border-radius:8px;padding:16px;margin:0 0 22px;font-size:16px;line-height:1.5}.replacement-notice button{margin:10px 0 0 12px;font-size:14px}
