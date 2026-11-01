@@ -1,0 +1,189 @@
+[
+  {
+    "id": "open-sans",
+    "label": "Open Sans",
+    "category": "Sans serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/open-sans@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/open-sans-latin-700-normal.woff",
+      "bolditalic": "assets/fonts/open-sans-latin-700-italic.woff",
+      "italic": "assets/fonts/open-sans-latin-400-italic.woff",
+      "normal": "assets/fonts/open-sans-latin-400-normal.woff"
+    }
+  },
+  {
+    "id": "roboto",
+    "label": "Roboto",
+    "category": "Sans serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/roboto-latin-700-normal.woff",
+      "bolditalic": "assets/fonts/roboto-latin-700-italic.woff",
+      "italic": "assets/fonts/roboto-latin-400-italic.woff",
+      "normal": "assets/fonts/roboto-latin-400-normal.woff"
+    }
+  },
+  {
+    "id": "lato",
+    "label": "Lato",
+    "category": "Sans serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/lato@5.3.0",
+    "variants": {
+      "normal": "assets/fonts/lato-latin-400-normal.woff",
+      "bold": "assets/fonts/lato-latin-700-normal.woff",
+      "italic": "assets/fonts/lato-latin-400-italic.woff",
+      "bolditalic": "assets/fonts/lato-latin-700-italic.woff"
+    }
+  },
+  {
+    "id": "montserrat",
+    "label": "Montserrat",
+    "category": "Sans serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.3.0",
+    "variants": {
+      "normal": "assets/fonts/montserrat-latin-400-normal.woff",
+      "bold": "assets/fonts/montserrat-latin-700-normal.woff",
+      "italic": "assets/fonts/montserrat-latin-400-italic.woff",
+      "bolditalic": "assets/fonts/montserrat-latin-700-italic.woff"
+    }
+  },
+  {
+    "id": "nunito",
+    "label": "Nunito",
+    "category": "Sans serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/nunito@5.3.0",
+    "variants": {
+      "bolditalic": "assets/fonts/nunito-latin-700-italic.woff",
+      "italic": "assets/fonts/nunito-latin-400-italic.woff",
+      "normal": "assets/fonts/nunito-latin-400-normal.woff",
+      "bold": "assets/fonts/nunito-latin-700-normal.woff"
+    }
+  },
+  {
+    "id": "lora",
+    "label": "Lora",
+    "category": "Serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/lora@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/lora-latin-700-normal.woff",
+      "bolditalic": "assets/fonts/lora-latin-700-italic.woff",
+      "italic": "assets/fonts/lora-latin-400-italic.woff",
+      "normal": "assets/fonts/lora-latin-400-normal.woff"
+    }
+  },
+  {
+    "id": "merriweather",
+    "label": "Merriweather",
+    "category": "Serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/merriweather@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/merriweather-latin-700-normal.woff",
+      "bolditalic": "assets/fonts/merriweather-latin-700-italic.woff",
+      "normal": "assets/fonts/merriweather-latin-400-normal.woff",
+      "italic": "assets/fonts/merriweather-latin-400-italic.woff"
+    }
+  },
+  {
+    "id": "libre-baskerville",
+    "label": "Libre Baskerville",
+    "category": "Serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/libre-baskerville@5.3.0",
+    "variants": {
+      "italic": "assets/fonts/libre-baskerville-latin-400-italic.woff",
+      "bolditalic": "assets/fonts/libre-baskerville-latin-700-italic.woff",
+      "normal": "assets/fonts/libre-baskerville-latin-400-normal.woff",
+      "bold": "assets/fonts/libre-baskerville-latin-700-normal.woff"
+    }
+  },
+  {
+    "id": "playfair-display",
+    "label": "Playfair Display",
+    "category": "Serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/playfair-display-latin-700-normal.woff",
+      "normal": "assets/fonts/playfair-display-latin-400-normal.woff",
+      "bolditalic": "assets/fonts/playfair-display-latin-700-italic.woff",
+      "italic": "assets/fonts/playfair-display-latin-400-italic.woff"
+    }
+  },
+  {
+    "id": "eb-garamond",
+    "label": "EB Garamond",
+    "category": "Serif",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/eb-garamond@5.3.0",
+    "variants": {
+      "bolditalic": "assets/fonts/eb-garamond-latin-700-italic.woff",
+      "italic": "assets/fonts/eb-garamond-latin-400-italic.woff",
+      "normal": "assets/fonts/eb-garamond-latin-400-normal.woff",
+      "bold": "assets/fonts/eb-garamond-latin-700-normal.woff"
+    }
+  },
+  {
+    "id": "caveat",
+    "label": "Caveat",
+    "category": "Handwritten",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/caveat@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/caveat-latin-700-normal.woff",
+      "normal": "assets/fonts/caveat-latin-400-normal.woff"
+    }
+  },
+  {
+    "id": "dancing-script",
+    "label": "Dancing Script",
+    "category": "Handwritten",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/dancing-script@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/dancing-script-latin-700-normal.woff",
+      "normal": "assets/fonts/dancing-script-latin-400-normal.woff"
+    }
+  },
+  {
+    "id": "patrick-hand",
+    "label": "Patrick Hand",
+    "category": "Handwritten",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/patrick-hand@5.3.0",
+    "variants": {
+      "normal": "assets/fonts/patrick-hand-latin-400-normal.woff"
+    }
+  },
+  {
+    "id": "oswald",
+    "label": "Oswald",
+    "category": "Display",
+    "version": "5.3.0",
+    "license": "OFL-1.1",
+    "source": "https://cdn.jsdelivr.net/npm/@fontsource/oswald@5.3.0",
+    "variants": {
+      "bold": "assets/fonts/oswald-latin-700-normal.woff",
+      "normal": "assets/fonts/oswald-latin-400-normal.woff"
+    }
+  }
+]
