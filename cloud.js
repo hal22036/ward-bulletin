@@ -10,7 +10,7 @@
  async workspaceAccess(){const api=await connect(),current=await user();if(!current)return {signedIn:false,admin:false,bulletin:false,kids:false};return {signedIn:true,...check(await api.rpc('bulletin_workspace_access'))};},
  async libraryAccess(){const access=await this.workspaceAccess();return {signedIn:access.signedIn,admin:access.admin,allowed:access.kids};},
  async testOneTimePurchase(product,week=null){const api=await connect();return check(await api.rpc('activate_bulletin_one_time_test',{selected_product:product,selected_week:week}));},
- async oneTimePurchases(){const api=await connect(),current=await user();if(!current)return [];return check(await api.from('bulletin_test_one_time_purchases').select('*').eq('user_id',current.id).order('purchased_at',{ascending:false}));},
+ async oneTimePurchases(){const api=await connect();if(!await user())return [];return check(await api.rpc('bulletin_one_time_purchase_history'))||[];},
  async canExportBulletin(week){const api=await connect();return !!check(await api.rpc('can_use_bulletin_editor',{target_week:week}));},
  async libraryPrograms(){const api=await connect();return check(await api.from('bulletin_library_programs').select('*').order('date',{ascending:false}));},
  async libraryPdf(path){const api=await connect();return check(await api.storage.from('kids-program-library').download(path));},
