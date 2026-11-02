@@ -1,5 +1,5 @@
 const PREVIEW_ACCOUNT_KEY='bulletin-studio-account-preview-v1';
-const PREVIEW_PLANS={bulletin:{name:'Ward Bulletin Studio',monthly:6,annual:66},kids:{name:'Kids Program Library',monthly:2,annual:22},bundle:{name:'Complete Bundle',monthly:8,annual:88}};
+const PREVIEW_PLANS={bulletin:{name:'Ward Bulletin Studio',monthly:6,annual:66},kids:{name:'Kids Program Library',monthly:2,annual:22},bundle:{name:'All Access',monthly:12,annual:120}};
 function readPreviewAccount(){try{const value=JSON.parse(localStorage.getItem(PREVIEW_ACCOUNT_KEY)||'{}');return {...value,plan:PREVIEW_PLANS[value.plan]?value.plan:'bulletin',billing:value.billing==='annual'?'annual':'monthly'};}catch{return {plan:'bulletin',billing:'monthly'};}}
 function previewLibraryAccess(account){return account.plan==='kids'||account.plan==='bundle';}
 function filterLibraryPrograms(programs,{query='',month='',activity='',paperSize=''}={}){query=query.toLowerCase().trim();return programs.filter(p=>(!query||[p.title,p.topic,p.holiday,p.activity,p.paper_size==='legal'?'Legal':p.paper_size==='letter'?'Standard':''].join(' ').toLowerCase().includes(query))&&(!month||p.date.startsWith(month))&&(!activity||p.activity===activity)&&(!paperSize||p.paper_size===paperSize)).sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title));}
