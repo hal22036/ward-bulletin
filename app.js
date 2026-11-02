@@ -18,6 +18,8 @@ defaults.wardOptions='';
 defaults.wardSectionConfig='';
 defaults.textAppearance='';
 defaults.paperSize='legal';
+defaults.programStyle='sacrament';
+defaults.programTitle='';
 defaults.printColor='color';
 defaults.calendarOptions='';
 defaults.calendarDayLayouts='';
@@ -27,7 +29,7 @@ defaults.programOptions='';
 defaults.welcomeNotes='Welcome and Announcements';
 defaults.wardStakeNotes='Ward/Stake Items';
 let data={...defaults};try{data={...defaults,...JSON.parse(localStorage.getItem('ward-bulletin-v1')||'{}')}}catch{}let tab='Meeting';
-const groups={Meeting:[['ward','Ward / branch name'],['stake','Stake name'],['digitalProgramUrl','Digital program URL','url'],['date','Meeting date','date'],['presiding','Presiding'],['conducting','Conducting'],['welcomeNotes','Welcome and Announcements text','textarea'],['wardStakeNotes','Ward/branch / Stake Items text','textarea'],['opening','Opening hymn','hymn'],['invocation','Invocation'],['sacrament','Sacrament hymn','hymn'],['program','Meeting program','program'],['closing','Closing hymn','hymn'],['benediction','Benediction']],'News / Calendar':[['announcements','Announcements','textarea'],['submission','Submission instructions','textarea']],'Ward / Branch':[['leadership','Leadership','ward'],['interviews','Interview instructions','textarea'],['missionaries','Missionaries','ward'],['temple','Temple information','textarea'],['information','Meeting schedule & notes','ward'],['fifthSunday','Fifth Sunday note','textarea']],Cover:[],'Digital Program':[]};
+const groups={Meeting:[['ward','Ward / branch name'],['stake','Stake name'],['digitalProgramUrl','Digital program URL','url'],['date','Meeting date','date'],['programTitle','Program title (optional)'],['presiding','Presiding'],['conducting','Conducting'],['welcomeNotes','Welcome and Announcements text','textarea'],['wardStakeNotes','Ward/branch / Stake Items text','textarea'],['opening','Opening hymn','hymn'],['invocation','Invocation'],['sacrament','Sacrament hymn','hymn'],['program','Meeting program','program'],['closing','Closing hymn','hymn'],['benediction','Benediction']],'News / Calendar':[['announcements','Announcements','textarea'],['submission','Submission instructions','textarea']],'Ward / Branch':[['leadership','Leadership','ward'],['interviews','Interview instructions','textarea'],['missionaries','Missionaries','ward'],['temple','Temple information','textarea'],['information','Meeting schedule & notes','ward'],['fifthSunday','Fifth Sunday note','textarea']],Cover:[],'Digital Program':[]};
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const meetingDate=()=>new Date(data.date+'T12:00:00');const dateText=()=>meetingDate().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});function status(t){$('#status').textContent=t}const weeklyDraftCache=new Map();let draftDatabase=null,draftSaveSequence=0;
 function persistWeek(){
  const json=JSON.stringify(data),key='ward-bulletin-week-'+data.date;
@@ -177,7 +179,7 @@ function meetingField([key,label,type]){
  return `<label class="field">${label}${type==='textarea'?`<textarea data-key="${key}" rows="7">${esc(data[key])}</textarea>`:`<input data-key="${key}" type="${type||'text'}" value="${esc(data[key])}">`}</label>`;
 }
 const meetingSections=[
- ['General',['ward','stake','digitalProgramUrl','date','presiding','conducting','welcomeNotes','wardStakeNotes']],
+ ['General',['ward','stake','digitalProgramUrl','date','programTitle','presiding','conducting','welcomeNotes','wardStakeNotes']],
  ['Hymns',['opening','sacrament','closing']],
  ['Prayers',['invocation','benediction']],
  ['Speakers',['program']]
@@ -451,6 +453,11 @@ function events(){
  return [...standalone,...linked].filter(e=>e.show!==false&&/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')&&String(e.title||'').trim()).flatMap(e=>expandCalendarEvent(e,from,through)).map(e=>({...e,text:[calendarTime(e.time),e.title].filter(Boolean).join(' - '),art:calendarArt(e)})).map(e=>({...e,iconSize:calendarDayLayouts()[e.date]?.sizes?.[e.calendarKey]||'normal'})).sort((a,b)=>{const date=a.date.localeCompare(b.date);if(date)return date;const order=calendarDayLayouts()[a.date]?.order||[],ai=order.indexOf(a.calendarKey),bi=order.indexOf(b.calendarKey);return (ai<0?1e6:ai)-(bi<0?1e6:bi)||String(a.time||'').localeCompare(String(b.time||''));});
 }
 function calendarHtml(){const {from,through}=calendarWindow(),all=events();return `<h3>${from.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})} – ${through.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</h3><div class="calgrid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day=>`<div class="calhead">${day}</div>`).join('')}${Array.from({length:35},(_,i)=>{const date=new Date(from);date.setDate(from.getDate()+i);return `<div class="calcell">${date.getDate()}${date.getDate()===1?' '+date.toLocaleDateString('en-US',{month:'long'}):''}<br>${all.filter(event=>event.date===dateKey(date)).map(event=>esc(event.text)).join('<br>')}</div>`;}).join('')}</div>`;}
+
+const programStyleChoices=[['sacrament','Sacrament Meeting','Sacrament Meeting'],['baptism','Baptism','Baptismal Service'],['memorial','Funeral / Memorial','Funeral / Memorial'],['primary','Primary Program','Primary Program'],['musical','Musical Program / Devotional','Musical Program / Devotional'],['activity','Ward / Branch Activity','Ward / Branch Activity'],['blank','Start from Scratch','Program']];
+function programHeading(){return data.programTitle?.trim()||(programStyleChoices.find(style=>style[0]===data.programStyle)||programStyleChoices[0])[2];}
+function updateProgramStyleControls(){const host=$('#programStyleChoices');if(!host)return;const hadFocus=!!host.contains?.(document.activeElement);host.innerHTML=programStyleChoices.map(([value,label])=>'<label class="program-style-card"><input type="radio" name="programStyle" value="'+value+'" '+((data.programStyle||'sacrament')===value?'checked':'')+'><span>'+esc(label)+'</span></label>').join('');host.querySelectorAll('input').forEach(input=>input.onchange=()=>{if(!input.checked)return;data.programStyle=input.value;save();});if(hadFocus)host.querySelector('input:checked')?.focus({preventScroll:true});const label=$('#selectedProgramStyle');if(label)label.textContent=(programStyleChoices.find(style=>style[0]===data.programStyle)||programStyleChoices[0])[1];}
+
 function updatePrintSettings(){
  const letter=data.paperSize==='letter',side=$('#side'),value=side.value;
  const paperSelect=$('#paperSize'),colorSelect=$('#printColor');if(paperSelect)paperSelect.value=letter?'letter':'legal';if(colorSelect)colorSelect.value=data.printColor==='bw'?'bw':'color';
@@ -460,7 +467,7 @@ function updatePrintSettings(){
  const printNotes=$('.printnote');if(printNotes)printNotes.hidden=value==='digital';const eyebrow=$('.preview .eyebrow');if(eyebrow)eyebrow.textContent=value==='digital'?'DIGITAL PREVIEW':'PRINT PREVIEW';
  const note=$('.printnote span');if(note)note.textContent=letter?'11 × 8.5 in · Letter landscape · 2 pages · Bi-fold':'14 × 8.5 in · Legal landscape · 2 pages · Tri-fold';
 }
-function render(){updateTextAppearanceControls();updateDigitalSiteLink();updateWeekHeader();updatePrintSettings();$('#edition').textContent=dateText();if(window.renderPrintPreview)window.renderPrintPreview();}
+function render(){updateProgramStyleControls();updateTextAppearanceControls();updateDigitalSiteLink();updateWeekHeader();updatePrintSettings();$('#edition').textContent=dateText();if(window.renderPrintPreview)window.renderPrintPreview();}
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000)}
 $('#saveDraft').onclick=()=>download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`bulletin-${data.date}.json`);$('#importDraft').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!d||typeof d!=='object'||Array.isArray(d))throw Error();const clean={};for(const k of Object.keys(defaults)){if(typeof d[k]==='string')clean[k]=d[k]}if(clean.date&&!/^\d{4}-\d{2}-\d{2}$/.test(clean.date))throw Error();for(const key of ['coverQr','coverUpload'])if(clean[key]&&!/^data:image\/(jpeg|png);base64,/.test(clean[key]))throw Error();if(clean.cover&&!/^(data:image\/(jpeg|png);base64,|reference-1-1.jpg$)/.test(clean.cover))throw Error();data={...defaults,...clean};syncProgram(readProgramOptions());save();edit();status('Draft imported.')}catch{status('Could not import this draft. Select a Bulletin Studio JSON file.')}};$('#next').onclick=()=>{const date=meetingDate();date.setDate(date.getDate()+7);switchWeek(dateKey(date));};$('#side').onchange=render;
 const paperSizeControl=$('#paperSize');if(paperSizeControl)paperSizeControl.onchange=()=>{data.paperSize=paperSizeControl.value;$('#side').value=tab==='Digital Program'?'digital':data.paperSize==='letter'?(tab==='Ward / Branch'||tab==='Cover'?'0':'1'):(tab==='News / Calendar'?'0':'1');save();};
