@@ -19,6 +19,7 @@
  async paymentMethods(){const api=await connect();return check(await api.from('bulletin_payment_methods').select('*').order('code'));},
  async savePaymentMethod(code,instructions,enabled){const api=await connect();check(await api.from('bulletin_payment_methods').update({instructions,enabled}).eq('code',code));},
  async manualOrders(){const api=await connect(),current=await user();if(!current)throw Error('Sign in first.');return check(await api.from('bulletin_manual_orders').select('*').eq('user_id',current.id).order('created_at',{ascending:false}));},
+ async saveCustomerAccess(fields){const api=await connect();return check(await api.rpc('save_bulletin_customer_access',{customer_email:fields.email,customer_name:fields.name,customer_unit:fields.unit,allow_access:fields.allowed,selected_source:fields.source,allow_bulletin:fields.bulletin,allow_kids:fields.kids,expires_on:fields.expiresAt,admin_note:fields.note}));},
  async adminCustomers(search='',filter='all',page=1){const api=await connect();return check(await api.rpc('admin_bulletin_customers',{search_text:search,status_filter:filter,page_number:page}));},
  async adminManualOrders(){const api=await connect();return check(await api.rpc('admin_bulletin_manual_payments'))||[];},
  async createManualOrder(product,billing,method,week=null){const api=await connect();return check(await api.rpc('create_bulletin_manual_order',{selected_product:product,selected_billing:billing,selected_method:method,selected_week:week}));},
