@@ -56,3 +56,5 @@ body .paper-size-badge.legal{background:var(--studio-soft);color:#745135;border-
 body .studio-footer{background:var(--studio-soft);color:var(--studio-ink);border-color:var(--studio-warm-border)}
 body .studio-footer a{color:var(--studio-primary)}
 /* Never recolor rendered document pages or user-selected font/image colors. */
+
+body[data-studio-view="public"]>header{background:transparent;border:0;box-shadow:none}
