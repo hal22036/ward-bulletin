@@ -4,3 +4,15 @@
 
 h1,.profile-name{overflow-wrap:anywhere}@media(max-width:750px){body>header>nav{display:none}body>header:has(.profile-control) .brand{min-width:0}body>header .brand span{white-space:normal}}
 .profile-dropdown nav{align-items:stretch}.profile-dropdown nav a,.profile-dropdown nav button{width:100%;border:0;justify-content:flex-start;text-align:left;background:white}.profile-dropdown nav a:hover{background:#eff3ec}
+/* Compact shared header: brand left, navigation centered, profile right. */
+body>header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:18px;height:auto;min-height:72px;padding:10px 4vw}
+body>header .brand{grid-column:1;grid-row:1;display:flex;flex-direction:row;align-items:center;gap:10px;justify-self:start;font-size:21px;min-width:0}
+body>header .brand img,body>header .brand-logo{width:60px;height:44px;object-fit:contain}
+body>header .brand span{white-space:normal}
+body>header>.studio-navigation{grid-column:2;grid-row:1;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;margin:0}
+body>header>.studio-navigation a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #c2cdbd;background:#edf2e9;color:#315b4b;border-radius:7px;font:600 15px/1.3 system-ui;padding:10px 14px;min-height:42px}
+body>header>.profile-control{grid-column:3;grid-row:1;justify-self:end;margin:0}
+body>header:has(.current-unit){grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+.intro .current-unit{font:28px Georgia,serif;text-align:left;margin-bottom:14px}.previewhead .publication-state{display:inline-block;text-align:left;margin:6px 0}
+#accountSectionView>h2{font-size:32px;margin:24px 0}#accountSectionView>[hidden],#dashboardHome[hidden]{display:none!important}#billingAccountSummary{padding:0 0 18px;border-bottom:1px solid #d6ded4;margin-bottom:20px}#billingAccountSummary h2{font-size:22px}#billingAccountSummary>.eyebrow,#billingAccountSummary>a[href="archive.html"],#billingAccountSummary>button{display:none}#accountSectionView #myLibrary>h2{display:none}
+@media(max-width:750px){body>header{grid-template-columns:minmax(0,1fr) auto auto;min-height:66px;padding:8px 16px;gap:8px}body>header .brand{font-size:17px;gap:6px}body>header .brand img{width:43px;height:36px}body>header>.studio-navigation{grid-column:2;grid-row:1;gap:6px}body>header>.studio-navigation a{font-size:13px;padding:8px;min-height:42px}body>header>.profile-control{grid-column:3;grid-row:1}body>header .profile-toggle{width:42px;height:42px}.profile-avatar{width:32px;height:32px;font-size:15px}body>header:has(.studio-navigation a:nth-of-type(2)){grid-template-columns:minmax(0,1fr) auto}body>header:has(.studio-navigation a:nth-of-type(2))>.profile-control{grid-column:2}body>header:has(.studio-navigation a:nth-of-type(2))>.studio-navigation{grid-row:2;grid-column:1/-1;flex-wrap:wrap}.intro .current-unit{font-size:24px}}
