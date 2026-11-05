@@ -28,10 +28,11 @@ defaults.calendarDayLayouts='';
 defaults.calendarMonthLabels='';
 defaults.newsOptions='';
 defaults.programOptions='';
+defaults.meetingItemOrder='';
 defaults.welcomeNotes='Welcome and Announcements';
 defaults.wardStakeNotes='Ward/Stake Items';
 let hadSavedDraft=false;let data={...defaults};try{const saved=JSON.parse(localStorage.getItem('ward-bulletin-v1')||'null');if(saved&&typeof saved==='object'){hadSavedDraft=true;data={...defaults,...saved}}}catch{}let tab='Meeting';
-const groups={Meeting:[['ward','Ward / branch name (optional)'],['stake','Stake name'],['digitalProgramUrl','Digital program URL','url'],['date','Meeting date','date'],['programTitle','Program heading (editable)'],['presiding','Presiding'],['conducting','Conducting'],['welcomeNotes','Welcome and Announcements text','textarea'],['wardStakeNotes','Ward/branch / Stake Items text','textarea'],['opening','Opening hymn','hymn'],['invocation','Invocation'],['sacrament','Sacrament hymn','hymn'],['program','Meeting program','program'],['closing','Closing hymn','hymn'],['benediction','Benediction']],'News / Calendar':[['announcements','Announcements','textarea'],['submission','Submission instructions','textarea']],'Ward / Branch':[['leadership','Leadership','ward'],['interviews','Interview instructions','textarea'],['missionaries','Missionaries','ward'],['temple','Temple information','textarea'],['information','Meeting schedule & notes','ward'],['fifthSunday','Fifth Sunday note','textarea']],Cover:[],'Digital Program':[]};
+const groups={Meeting:[['ward','Ward / branch name (optional)'],['stake','Stake name'],['digitalProgramUrl','Digital program URL','url'],['date','Meeting date','date'],['programTitle','Program heading (editable)'],['presiding','Presiding'],['conducting','Conducting'],['welcomeNotes','Welcome and Announcements text','textarea'],['wardStakeNotes','Ward/branch / Stake Items text','textarea'],['opening','Opening hymn','hymn'],['invocation','Invocation'],['sacrament','Sacrament hymn','hymn'],['program','Meeting program','program'],['programInformation','Other Program Information','information'],['closing','Closing hymn','hymn'],['benediction','Benediction']],'News / Calendar':[['announcements','Announcements','textarea'],['submission','Submission instructions','textarea']],'Ward / Branch':[['leadership','Leadership','ward'],['interviews','Interview instructions','textarea'],['missionaries','Missionaries','ward'],['temple','Temple information','textarea'],['information','Meeting schedule & notes','ward'],['fifthSunday','Fifth Sunday note','textarea']],Cover:[],'Digital Program':[]};
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const meetingDate=()=>new Date(data.date+'T12:00:00');const dateText=()=>meetingDate().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});function status(t){$('#status').textContent=t}const weeklyDraftCache=new Map();let draftDatabase=null,draftSaveSequence=0;
 function persistWeek(){
  const json=JSON.stringify(data),key='ward-bulletin-week-'+data.date;
@@ -100,22 +101,24 @@ function hymnFields(key,label){
 function readProgramOptions(){
  try{
   const p=JSON.parse(data.programOptions);
-  if(p&&typeof p.fast==='boolean'&&typeof p.showSpeakers==='boolean'&&Array.isArray(p.speakers))return {fast:p.fast,showSpeakers:p.showSpeakers,speakers:p.speakers.filter(x=>x&&typeof x.type==='string'&&typeof x.name==='string').map(x=>({type:x.type,name:x.name,show:x.show!==false})),notes:typeof p.notes==='string'?p.notes:'',showNotes:p.showNotes!==false};
+  if(p&&typeof p.fast==='boolean'&&typeof p.showSpeakers==='boolean'&&Array.isArray(p.speakers))return {fast:p.fast,showSpeakers:p.showSpeakers,speakers:p.speakers.filter(x=>x&&typeof x.type==='string'&&typeof x.name==='string').map(x=>({type:x.type,name:x.name,show:x.show!==false})),notes:typeof p.notes==='string'?p.notes:'',showNotes:p.showNotes!==false,information:Array.isArray(p.information)?p.information.filter(x=>x&&typeof x.text==='string').map((x,i)=>({id:String(x.id||'information-'+i),title:String(x.title||''),text:x.text,show:x.show!==false})):[]};
  }catch{}
  const old=String(data.program||'');
  const fast=/fast and testimony meeting/i.test(old);
- return {fast,showSpeakers:false,speakers:[],notes:old.replace(/fast and testimony meeting/ig,'').trim(),showNotes:true};
+ return {fast,showSpeakers:false,speakers:[],notes:old.replace(/fast and testimony meeting/ig,'').trim(),showNotes:true,information:[]};
 }
 function syncProgram(p){
  data.programOptions=JSON.stringify(p);
- data.program=[p.fast?'Fast and Testimony Meeting':'',p.showSpeakers?p.speakers.filter(x=>x.show&&x.name.trim()).map(x=>[x.type.trim(),x.name.trim()].filter(Boolean).join(': ')).join('\n'):'',p.showNotes?p.notes.trim():''].filter(Boolean).join('\n\n');
+ data.program=[p.fast?'Fast and Testimony Meeting':'',p.showSpeakers?p.speakers.filter(x=>x.show&&x.name.trim()).map(x=>[x.type.trim(),x.name.trim()].filter(Boolean).join(': ')).join('\n'):'',p.showNotes?[p.notes.trim(),...(p.information||[]).filter(x=>x.show).map(x=>[x.title,x.text].filter(Boolean).join('\n'))].filter(Boolean).join('\n\n'):''].filter(Boolean).join('\n\n');
 }
 function programSwitch(key,label,on){
  return `<fieldset style="border:0;padding:0;margin:16px 0"><legend style="font-size:11px;font-weight:600">${esc(label)}</legend>${[true,false].map(value=>`<label style="display:inline-flex;align-items:center;gap:5px;margin:8px 16px 0 0;font-size:12px"><input style="width:auto;margin:0" type="radio" name="program-${key}" data-program-toggle="${key}" value="${value}" ${on===value?'checked':''}>${value?'Show':'Hide'}</label>`).join('')}</fieldset>`;
 }
 function programFields(){
  const p=readProgramOptions();
- return `<section aria-label="Meeting program"><h3>Meeting program</h3>${programSwitch('fast','Fast and Testimony Meeting',p.fast)}${programSwitch('showSpeakers','Speakers',p.showSpeakers)}${p.speakers.map((x,i)=>`<fieldset style="border:1px solid #d5dacf;border-radius:4px;padding:0 12px;margin:16px 0"><legend>Speaker ${i+1}</legend>${programSwitch('speaker-'+i,'Include speaker '+(i+1),x.show)}<label class="field">Speaker type:<input data-speaker="${i}" data-speaker-part="type" list="speaker-types" value="${esc(x.type)}" placeholder="e.g. Youth Speaker"></label><label class="field">Name:<input data-speaker="${i}" data-speaker-part="name" value="${esc(x.name)}"></label></fieldset>`).join('')}<datalist id="speaker-types"><option value="Speaker"><option value="Youth Speaker"><option value="Stake Speaker"></datalist><button type="button" id="addSpeaker" class="secondary">Add speaker</button>${programSwitch('showNotes','Other program information',p.showNotes)}<label class="field">Other program information:<textarea id="programNotes" rows="4">${esc(p.notes)}</textarea></label><p class="note">Show any combination of items. Hidden entries stay saved.</p></section>`;
+ return `<section aria-label="Meeting program"><h3>Meeting program</h3>${programSwitch('fast','Fast and Testimony Meeting',p.fast)}${programSwitch('showSpeakers','Speakers',p.showSpeakers)}${p.speakers.map((x,i)=>`<fieldset style="border:1px solid #d5dacf;border-radius:4px;padding:0 12px;margin:16px 0"><legend>Speaker ${i+1}</legend>${programSwitch('speaker-'+i,'Include speaker '+(i+1),x.show)}<label class="field">Speaker type:<input data-speaker="${i}" data-speaker-part="type" list="speaker-types" value="${esc(x.type)}" placeholder="e.g. Youth Speaker"></label><label class="field">Name:<input data-speaker="${i}" data-speaker-part="name" value="${esc(x.name)}"></label></fieldset>`).join('')}<datalist id="speaker-types"><option value="Speaker"><option value="Youth Speaker"><option value="Stake Speaker"></datalist><button type="button" id="addSpeaker" class="secondary">Add speaker</button></section>`;
+}
+function programInformationFields(){const p=readProgramOptions();return `<section aria-label="Other Program Information">${programSwitch('showNotes','Other program information',p.showNotes)}<label class="field">Other program information:<textarea id="programNotes" rows="4">${esc(p.notes)}</textarea></label>${(p.information||[]).map((item,i)=>`<details data-information-panel="${i}"><summary style="padding:12px 0;font-weight:600;cursor:pointer">${esc(item.title||'Information '+(i+1))}</summary><label class="field">Title (optional)<input data-information="${i}" data-information-part="title" value="${esc(item.title)}"></label><label class="field">Information<textarea rows="4" data-information="${i}" data-information-part="text">${esc(item.text)}</textarea></label><label class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" style="width:auto" data-information="${i}" data-information-part="show" ${item.show?'checked':''}>Show this information</label><button type="button" class="secondary" data-information-remove="${i}">Remove information</button></details>`).join('')}<button type="button" id="addInformation" class="secondary">Add Information</button><p class="note">Arrange these entries with hymns, prayers, and speakers in Program order. Hidden entries stay saved.</p></section>`;
 }
 function bindProgramFields(){
  $('#editor').querySelectorAll('[data-program-toggle]').forEach(e=>e.onchange=()=>{
@@ -127,11 +130,14 @@ function bindProgramFields(){
   const p=readProgramOptions();p.speakers[Number(e.dataset.speaker)][e.dataset.speakerPart]=e.value;syncProgram(p);save();
  });
  const add=$('#addSpeaker');if(add)add.onclick=()=>{const p=readProgramOptions();p.speakers.push({type:'Speaker',name:'',show:true});syncProgram(p);save();edit();};
+ $('#editor').querySelectorAll('[data-information]').forEach(input=>input.oninput=()=>{const options=readProgramOptions(),part=input.dataset.informationPart;options.information[+input.dataset.information][part]=part==='show'?input.checked:input.value;syncProgram(options);if(part==='title'){const summary=input.closest('details').querySelector('summary');summary.textContent=input.value||'Information '+(+input.dataset.information+1);}save();});
+ const addInfo=$('#addInformation');if(addInfo)addInfo.onclick=()=>{const options=readProgramOptions();options.information.push({id:crypto.randomUUID(),title:'',text:'',show:true});options.showNotes=true;syncProgram(options);save();edit();const panel=$('#editor').querySelector('[data-information-panel="'+(options.information.length-1)+'"]');if(panel){panel.closest('[data-meeting-section]').open=true;panel.open=true;panel.querySelector('input').focus();}};
+ $('#editor').querySelectorAll('[data-information-remove]').forEach(button=>button.onclick=()=>{const options=readProgramOptions();options.information.splice(+button.dataset.informationRemove,1);syncProgram(options);save();edit();});
  const notes=$('#programNotes');if(notes)notes.oninput=()=>{const p=readProgramOptions();p.notes=notes.value;syncProgram(p);save();};
 }
 function readExtraHymns(){
- try{const list=JSON.parse(data.extraHymns);if(Array.isArray(list))return list.filter(h=>h&&typeof h.label==='string').map(h=>({label:h.label,number:String(h.number||''),name:String(h.name||''),show:!!h.show,after:Math.max(0,Number(h.after)||0),linkType:String(h.linkType||'auto'),url:String(h.url||''),rightLabel:String(h.rightLabel??'Hymn'),showRightLabel:h.showRightLabel!==false}));}catch{}
- return [{label:'Intermediate Hymn',number:'',name:'',show:false,after:1}];
+ try{const list=JSON.parse(data.extraHymns);if(Array.isArray(list))return list.filter(h=>h&&typeof h.label==='string').map((h,i)=>({id:String(h.id||'extra-'+i),label:h.label,number:String(h.number||''),name:String(h.name||''),show:!!h.show,after:Math.max(0,Number(h.after)||0),linkType:String(h.linkType||'auto'),url:String(h.url||''),rightLabel:String(h.rightLabel??'Hymn'),showRightLabel:h.showRightLabel!==false}));}catch{}
+ return [{id:'extra-0',label:'Intermediate Hymn',number:'',name:'',show:false,after:1}];
 }
 function extraHymnFields(){
  return readExtraHymns().map((h,i)=>`<details data-extra-panel="${i}" style="border:1px solid #d5dacf;border-radius:4px;margin:17px 0;padding:0 12px"><summary style="padding:12px 0;cursor:pointer;font-weight:600;font-size:12px">${esc(h.label||'Additional hymn')}</summary><label class="field">Hymn type:<input data-extra="${i}" data-extra-part="label" value="${esc(h.label)}"></label>${[true,false].map(show=>`<label style="display:inline-flex;align-items:center;gap:5px;margin:8px 14px 0 0;font-size:12px"><input type="radio" style="width:auto;margin:0" name="extra-visible-${i}" data-extra="${i}" data-extra-part="show" value="${show}" ${h.show===show?'checked':''}>${show?'Show':'Hide'}</label>`).join('')}<label class="field">Hymn #:<input inputmode="numeric" data-extra="${i}" data-extra-part="number" value="${esc(h.number)}"></label><label class="field">Hymn name:<input data-extra="${i}" data-extra-part="name" value="${esc(h.name)}"></label>${hymnRightFields(i,true)}${hymnLinkFields(i,h.linkType,h.url,true)}<label class="field">Place after speaker #:<input type="number" min="0" step="1" data-extra="${i}" data-extra-part="after" value="${h.after}"></label><p class="note">0 places it before the speakers. Higher numbers place it after that many visible speakers, or after the last speaker.</p><button type="button" class="secondary" data-extra-remove="${i}">Remove hymn</button><p></p></details>`).join('')+'<button type="button" class="secondary" id="addHymn">Add hymn</button><p></p>';
@@ -140,7 +146,7 @@ function bindExtraHymns(){
  $('#editor').querySelectorAll('[data-hymn-link]').forEach(input=>input.oninput=()=>{const links=hymnLinkOptions(),key=input.dataset.hymnLink;links[key]={...links[key],[input.dataset.hymnLinkPart]:input.value};data.hymnLinks=JSON.stringify(links);save();});
  $('#editor').querySelectorAll('[data-hymn-visible]').forEach(e=>e.onchange=()=>{let visible={};try{visible=JSON.parse(data.hymnVisibility)||{}}catch{}visible[e.dataset.hymnVisible]=e.value==='true';data.hymnVisibility=JSON.stringify(visible);save();});
  $('#editor').querySelectorAll('[data-extra]').forEach(e=>e.oninput=()=>{const hymns=readExtraHymns(),part=e.dataset.extraPart;hymns[+e.dataset.extra][part]=part==='showRightLabel'?e.checked:part==='show'?e.value==='true':part==='after'?Math.max(0,Math.floor(Number(e.value)||0)):e.value;data.extraHymns=JSON.stringify(hymns);if(part==='label'){const summary=$('#editor').querySelector('[data-extra-panel="'+e.dataset.extra+'"] summary');if(summary)summary.textContent=e.value||'Additional hymn';}save();});
- const add=$('#addHymn');if(add)add.onclick=()=>{const hymns=readExtraHymns();hymns.push({label:'Additional Hymn',number:'',name:'',show:true,after:1});data.extraHymns=JSON.stringify(hymns);save();edit();};
+ const add=$('#addHymn');if(add)add.onclick=()=>{const hymns=readExtraHymns();hymns.push({id:crypto.randomUUID(),label:'Additional Hymn',number:'',name:'',show:true,after:1});data.extraHymns=JSON.stringify(hymns);save();edit();};
  $('#editor').querySelectorAll('[data-extra-remove]').forEach(e=>e.onclick=()=>{const hymns=readExtraHymns();hymns.splice(+e.dataset.extraRemove,1);data.extraHymns=JSON.stringify(hymns);save();edit();});
 }
 function normalizeWardNotes(w){if(Array.isArray(w.notesRows))return {...w,notesTitle:w.notesTitle??'NOTES'};const original=String(w.notes||''),rows=original.split('\n');if(/^\s*Class\s+Room\s*#/i.test(rows[0]||'')){const notesRows=rows.slice(1).filter(line=>line.trim()).map(line=>{const parts=line.trim().split(/\s{2,}|\s*\|\s*/);if(parts.length>1)return {className:parts.slice(0,-1).join(' '),room:parts.at(-1)};const match=line.trim().match(/^(.*?)\s+(\S+)$/);return {className:match?match[1]:line.trim(),room:match?match[2]:''};});return {...w,notesTitle:w.notesTitle??'NOTES',notesRows,notes:''};}return {...w,notesTitle:w.notesTitle??'NOTES',notesRows:[],notes:original};}
@@ -186,20 +192,36 @@ function bindWard(){
  const notes=$('#wardNotes');if(notes)notes.oninput=()=>{const w=readWard();w.notes=notes.value;saveWard(w);};
 }
 function meetingField([key,label,type]){
+ if(key==='programTitle'){const defaultHeading=(programStyleChoices.find(style=>style[0]===data.programStyle)||programStyleChoices[0])[2];return `<label class="field">Program heading<input data-key="programTitle" type="text" value="${esc(data.programTitle||defaultHeading)}" placeholder="${esc(defaultHeading)}"></label><label class="field" style="display:flex;align-items:center;gap:8px"><input data-key="showProgramHeading" type="checkbox" style="width:auto;margin:0" ${data.showProgramHeading!=='false'?'checked':''}>Show program heading</label>`;}
  if(type==='ward')return wardFields(key);
  if(type==='program')return programFields();
+ if(type==='information')return programInformationFields();
  if(type==='hymn')return hymnFields(key,label);
  return `<label class="field">${label}${type==='textarea'?`<textarea data-key="${key}" rows="7">${esc(data[key])}</textarea>`:`<input data-key="${key}" type="${type||'text'}" value="${esc(data[key])}">`}</label>`;
 }
+function meetingSequence(includeHidden=false){
+ const options=readProgramOptions(),items=[],add=(id,kind,label,value,show=true,extra={})=>items.push({id,kind,label,value:String(value||''),show:!!show,...extra});
+ add('presiding','entry','Presiding',data.presiding);add('conducting','entry','Conducting',data.conducting);add('welcome','notes','Welcome and Announcements',data.welcomeNotes);
+ add('opening','hymn','Opening Hymn',data.opening,hymnIsVisible('opening'),{rightLabel:hymnRightText('opening')});add('invocation','entry','Invocation',data.invocation);add('wardItems','notes','Ward / Stake Items',data.wardStakeNotes);
+ add('sacrament','hymn','Sacrament Hymn',data.sacrament,hymnIsVisible('sacrament'),{rightLabel:hymnRightText('sacrament')});add('administration','center','Administration of the Sacrament','Administration of the Sacrament');add('fast','center','Fast and Testimony Meeting','Fast and Testimony Meeting',options.fast,{dots:true});
+ const speakers=options.speakers.map((speaker,i)=>({...speaker,index:i})),visibleSpeakers=speakers.filter(s=>options.showSpeakers&&s.show&&s.name.trim()),extras=readExtraHymns();
+ for(let position=0;position<=visibleSpeakers.length;position++){if(position){const speaker=visibleSpeakers[position-1];add('speaker-'+speaker.index,'entry',speaker.type||'Speaker',speaker.name,true);}for(const hymn of extras.filter(h=>Math.min(h.after,visibleSpeakers.length)===position))add('hymn-'+hymn.id,'hymn',hymn.label||'Hymn',hymn.number?'Hymn '+hymn.number+(hymn.name?' · '+hymn.name:''):hymn.name,hymn.show,{rightLabel:hymnRightText(hymn),id:'hymn-'+hymn.id});}
+ for(const speaker of speakers.filter(s=>!visibleSpeakers.some(v=>v.index===s.index)))add('speaker-'+speaker.index,'entry',speaker.type||'Speaker',speaker.name,false);
+ add('notes','notes','Other program information',options.notes,options.showNotes);for(const item of options.information||[])add('info-'+item.id,'notes',item.title||'Information',[(item.title||'').trim(),item.text].filter(Boolean).join('\n'),options.showNotes&&item.show);
+ add('closing','hymn','Closing Hymn',data.closing,hymnIsVisible('closing'),{rightLabel:hymnRightText('closing'),id:'closing'});add('benediction','entry','Benediction',data.benediction);
+ let order=[];try{const parsed=JSON.parse(data.meetingItemOrder);if(Array.isArray(parsed))order=parsed;}catch{}const byId=new Map(items.map(item=>[item.id,item])),ordered=[];for(const id of order){if(byId.has(id)){ordered.push(byId.get(id));byId.delete(id);}}for(const item of byId.values()){const index=items.indexOf(item),next=items.slice(index+1).find(candidate=>ordered.some(existing=>existing.id===candidate.id));if(next)ordered.splice(ordered.findIndex(existing=>existing.id===next.id),0,item);else ordered.push(item);}return includeHidden?ordered:ordered.filter(item=>item.show&&item.value.trim());
+}
+function meetingOrderEditor(){return `<details data-meeting-order><summary style="padding:14px 0;font-weight:600;cursor:pointer">Program order</summary><p class="note">Drag a grip to arrange all meeting entries in the order they should print. You can also use its Up/Down arrow keys or choose a position. Empty and hidden entries stay available here.</p>${meetingSequence(true).map((item,i,all)=>`<div data-order-item="meeting" data-order-index="${i}" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #d5dacf">${orderHandle('meeting',i,item.label)}<span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(item.label)}${!item.show?' (hidden)':!item.value.trim()?' (empty)':''}</span><select data-meeting-position="${i}" aria-label="Position of ${esc(item.label)}" style="width:65px">${all.map((_,n)=>`<option value="${n}" ${n===i?'selected':''}>${n+1}</option>`).join('')}</select></div>`).join('')}</details>`;}
 const meetingSections=[
  ['General',['ward','stake','digitalProgramUrl','date','programTitle','presiding','conducting','welcomeNotes','wardStakeNotes']],
  ['Hymns',['opening','sacrament','closing']],
  ['Prayers',['invocation','benediction']],
- ['Speakers',['program']]
+ ['Speakers',['program']],
+ ['Other Program Information',['programInformation']]
 ];
 const expandedMeetingSections=new Set();
 function meetingEditor(){
- return meetingSections.map(([title,keys])=>`<details data-meeting-section="${title}" ${expandedMeetingSections.has(title)?'open':''} style="border:1px solid #d5dacf;border-radius:5px;margin:12px 0;padding:0 12px"><summary style="cursor:pointer;font-size:13px;font-weight:600;padding:14px 0">${title}</summary>${keys.map(key=>meetingField(groups.Meeting.find(field=>field[0]===key))+(title==='Hymns'&&key==='sacrament'?extraHymnFields():'')).join('')}</details>`).join('');
+ return meetingOrderEditor()+meetingSections.map(([title,keys])=>`<details data-meeting-section="${title}" ${expandedMeetingSections.has(title)?'open':''} style="border:1px solid #d5dacf;border-radius:5px;margin:12px 0;padding:0 12px"><summary style="cursor:pointer;font-size:13px;font-weight:600;padding:14px 0">${title}</summary>${keys.map(key=>meetingField(groups.Meeting.find(field=>field[0]===key))+(title==='Hymns'&&key==='sacrament'?extraHymnFields():'')).join('')}</details>`).join('');
 }
 function readNews(){
  try{const n=JSON.parse(data.newsOptions);if(Array.isArray(n))return n.filter(x=>x&&typeof x.title==='string'&&typeof x.body==='string').map(x=>({...x,recurring:!!x.recurring,image:/^data:image\/(jpeg|png);base64,/.test(x.image||'')?x.image:'',icon:x.image&&!x.imageChoice?'upload':typeof x.icon==='string'?x.icon:'',show:x.show!==false}));}catch{}
@@ -264,13 +286,13 @@ function digitalHymns(){
     const type=config.type&&config.type!=='auto'?config.type:Number(hymn.number)>=1000?'home':'classic',base=type==='home'?'study/music/hymns-for-home-and-church/':type==='primary'?'media/music/songs/':'study/manual/hymns/';
     if(slug)url='https://www.churchofjesuschrist.org/'+base+slug+'?lang=eng';
   }
-  return {label,name:hymn.name,number:hymn.number,url,rightLabel:config.rightLabel??'Hymn'};
+  return {label,name:hymn.name,number:hymn.number,url,rightLabel:config.rightLabel??'Hymn',id:config.id};
  };
- const list=[];for(const [key,label] of [['opening','Opening Hymn'],['sacrament','Sacrament Hymn']])if(hymnIsVisible(key)&&String(data[key]||'').trim())list.push(make(label,splitHymn(data[key]),{...settings[key],rightLabel:hymnRightText(key)}));
+ const list=[];for(const [key,label] of [['opening','Opening Hymn'],['sacrament','Sacrament Hymn']])if(hymnIsVisible(key)&&String(data[key]||'').trim())list.push(make(label,splitHymn(data[key]),{...settings[key],rightLabel:hymnRightText(key),id:key}));
  const options=readProgramOptions(),speakerCount=options.showSpeakers?options.speakers.filter(s=>s.show&&s.name.trim()).length:0;
  const extra=readExtraHymns().map((h,i)=>({...h,index:i})).filter(h=>h.show&&(h.number||h.name)).sort((a,b)=>Math.min(a.after,speakerCount)-Math.min(b.after,speakerCount)||a.index-b.index);
- for(const hymn of extra)list.push(make(hymn.label,hymn,{type:hymn.linkType,url:hymn.url,rightLabel:hymnRightText(hymn)}));
- if(hymnIsVisible('closing')&&String(data.closing||'').trim())list.push(make('Closing Hymn',splitHymn(data.closing),{...settings.closing,rightLabel:hymnRightText('closing')}));return list;
+ for(const hymn of extra)list.push(make(hymn.label,hymn,{type:hymn.linkType,url:hymn.url,rightLabel:hymnRightText(hymn),id:'hymn-'+hymn.id}));
+ if(hymnIsVisible('closing')&&String(data.closing||'').trim())list.push(make('Closing Hymn',splitHymn(data.closing),{...settings.closing,rightLabel:hymnRightText('closing'),id:'closing'}));if(data.meetingItemOrder){const order=meetingSequence().map(item=>item.id);list.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));}return list;
 }
 function digitalProgramFormat(){return ['letter','legal'].includes(data.digitalProgramFormat)?data.digitalProgramFormat:(data.paperSize==='letter'?'letter':'legal');}
 function digitalDocument(images,info){
@@ -337,6 +359,7 @@ function bindCollapsedSections(){
 let orderDrag=null;
 function orderHandle(kind,index,title){return `<button type="button" class="order-handle" draggable="true" data-order-handle="${kind}" data-order-index="${index}" aria-label="Reorder ${esc(title)} ${index+1}" title="Drag to reorder, or use Up/Down arrow keys">⠿</button>`;}
 function reorderEntries(kind,from,to){
+ if(kind==='meeting'){const items=meetingSequence(true);if(from===to||from<0||to<0||from>=items.length||to>=items.length)return false;items.splice(to,0,items.splice(from,1)[0]);data.meetingItemOrder=JSON.stringify(items.map(item=>item.id));save();edit();const panel=$('#editor').querySelector('[data-meeting-order]');if(panel)panel.open=true;status('Program order updated.');return true;}
  if(kind.startsWith('day:'))return reorderCalendarDay(kind.slice(4),from,to);
  const list=kind==='announcements'?readNews():kind==='leadership'?readWard().leadership:null;
  if(!list||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=list.length||to>=list.length||from===to)return false;
@@ -349,6 +372,7 @@ function reorderEntries(kind,from,to){
 }
 function bindOrdering(){
  const root=$('#editor');
+ root.querySelectorAll('[data-meeting-position]').forEach(select=>select.onchange=()=>reorderEntries('meeting',+select.dataset.meetingPosition,+select.value));
  const clear=()=>root.querySelectorAll('[data-order-item]').forEach(row=>row.classList.remove('order-over','order-dragging'));
  root.querySelectorAll('[data-order-handle]').forEach(handle=>{
   handle.ondragstart=event=>{orderDrag={kind:handle.dataset.orderHandle,index:+handle.dataset.orderIndex};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',orderDrag.kind+':'+orderDrag.index);const row=handle.closest('[data-order-item]');if(row)row.classList.add('order-dragging');};
@@ -391,7 +415,7 @@ function edit(){const available=availableEditorTabs();if(!available.includes(tab
  const name=Array.from(fields).find(f=>f.dataset.part==='name').value.trim();
  data[key]=number?'Hymn '+number+(name?' · '+name:''):name;
  save();
-});$('#editor').querySelectorAll('[data-key]').forEach(e=>e.oninput=()=>{if(e.dataset.key==='date'){switchWeek(e.value);return;}data[e.dataset.key]=e.value;save()})}
+});$('#editor').querySelectorAll('[data-key]').forEach(e=>e.oninput=()=>{if(e.dataset.key==='date'){switchWeek(e.value);return;}data[e.dataset.key]=e.type==='checkbox'?String(e.checked):e.value;save()})}
 function program(){return `Presiding: ${data.presiding}\nConducting: ${data.conducting}\n\n${data.welcomeNotes}\n\nOpening hymn\n${data.opening}\n\nInvocation: ${data.invocation}\n\n${data.wardStakeNotes}\n\nSacrament hymn\n${data.sacrament}\n\nAdministration of the Sacrament\n\n${data.program}\n\nClosing hymn\n${data.closing}\n\nBenediction: ${data.benediction}`}
 function futureEventText(event){
  const date=new Date(event.date+'T12:00:00');
@@ -483,10 +507,6 @@ function updateProgramStyleControls(){
  if(size){size.closest('label').hidden=programSetupStep<1;if(programSetupStep<2)size.value='';}
  if(color){color.closest('label').hidden=programSetupStep<2;if(programSetupStep<3)color.value='';}
  const workspace=$('.workspace');if(workspace)workspace.hidden=programSetupStep<3;
- let heading=$('#setupProgramHeading');if(!heading){const field=document.createElement('label');field.className='field';field.textContent='Program heading';heading=document.createElement('input');heading.id='setupProgramHeading';heading.type='text';heading.placeholder='Use the program type heading';field.append(heading);host.append(field);heading.oninput=()=>{data.programTitle=heading.value;save();};}
- let showHeading=$('#showProgramHeading');if(!showHeading){const field=document.createElement('label');field.className='field';showHeading=document.createElement('input');showHeading.id='showProgramHeading';showHeading.type='checkbox';field.append(showHeading,document.createTextNode(' Show program heading'));heading.closest('label').before(field);showHeading.onchange=()=>{data.showProgramHeading=String(showHeading.checked);save();};}showHeading.checked=data.showProgramHeading!=='false';showHeading.closest('label').hidden=programSetupStep<3;heading.disabled=!showHeading.checked;
- heading.closest('label').hidden=programSetupStep<3;if(document.activeElement!==heading)heading.value=data.programTitle||'';
-
  const note=$('.program-format-note');if(note)note.hidden=programSetupStep<1;
  const sacrament=(data.programStyle||'sacrament')==='sacrament';
  for(const selector of ['.week-picker','#next','.datepill']){const item=$(selector);if(item)item.hidden=!sacrament;}
