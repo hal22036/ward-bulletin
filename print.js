@@ -45,12 +45,12 @@ window.makePdf = async function (settings={}) {
     size=9;const left=lines(label,size,104),right=lines(value,size,156);return {size,left,right,height:Math.max(left.length,right.length)*styleSize(size)*1.2};
   }
   function entry(p,label,value,top){const plan=entryPlan(label,value),x=19,w=274;for(let i=0;i<Math.max(plan.left.length,plan.right.length);i++){const l=plan.left[i]||'',r=plan.right[i]||'',lw=measure(font,l,plan.size),rw=measure(font,r,plan.size);text(p,l,x,top+i*styleSize(plan.size)*1.2,plan.size);text(p,r,x+w-rw,top+i*styleSize(plan.size)*1.2,plan.size);if(i===0&&w-lw-rw>14)text(p,'.'.repeat(Math.floor((w-lw-rw-14)/measure(font,'.',plan.size))),x+lw+7,top,plan.size);}}
-  function hymn(p,label,value,top,maxHeight=0){const previous=currentAppearance;if(maxHeight&&styleSize(25.5)>maxHeight){currentAppearance={...previous,size:maxHeight/25.5*10};warnings.push('Meeting hymn text scaled to fit');}const m=value.match(/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i);entry(p,label,m?m[1]:value,top);if(m)centered(p,'“'+m[2]+'”',19,top+styleSize(14),274,11.5);currentAppearance=previous;}
+  function hymn(p,label,value,top,maxHeight=0,rightLabel='Hymn'){const previous=currentAppearance;if(maxHeight&&styleSize(25.5)>maxHeight){currentAppearance={...previous,size:maxHeight/25.5*10};warnings.push('Meeting hymn text scaled to fit');}const m=value.match(/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i);const right=(m?m[1]:value).replace(/^Hymn(?=\s)/i,rightLabel).trim();entry(p,label,right,top);if(m)centered(p,'“'+m[2]+'”',19,top+styleSize(14),274,11.5);currentAppearance=previous;}
   // Program panel: same positions and visual hierarchy as the reference.
   const p=pages[1];useSection('meeting');const meetingHeadingHeight=headingBlock(data.ward,16,18,290,36,23,13,'Ward / branch name');centered(p,typeof programHeading==='function'?programHeading():'Sacrament Meeting',16,Math.max(49,18+meetingHeadingHeight),290,22);centered(p,dateText(),16,80,290,18);
   if(entryPlan('Presiding',data.presiding).height>28||entryPlan('Conducting',data.conducting).height>22)throw Error('Presiding or Conducting is too long. Shorten the name or title.');entry(p,'Presiding',data.presiding,108);entry(p,'Conducting',data.conducting,139);paragraph(p,data.welcomeNotes??'Welcome and Announcements',19,161,274,22,12,font,8,'Welcome and Announcements');
-  if(typeof hymnIsVisible!=='function'||hymnIsVisible('opening'))hymn(p,'Opening Hymn',data.opening,185,31);if(data.invocation.trim())entry(p,'Invocation',data.invocation,220);paragraph(p,data.wardStakeNotes??'Ward/Stake Items',19,244,274,27,12,font,8,'Ward / Stake Items');
-  rule(p,20,274,272,gold,3);if(typeof hymnIsVisible!=='function'||hymnIsVisible('sacrament'))hymn(p,'Sacrament Hymn',data.sacrament,279,31);text(p,'Administration of the Sacrament',19,314,11.5);rule(p,20,333,272,gold,3);
+  if(typeof hymnIsVisible!=='function'||hymnIsVisible('opening'))hymn(p,'Opening Hymn',data.opening,185,31,hymnRightText('opening'));if(data.invocation.trim())entry(p,'Invocation',data.invocation,220);paragraph(p,data.wardStakeNotes??'Ward/Stake Items',19,244,274,27,12,font,8,'Ward / Stake Items');
+  rule(p,20,274,272,gold,3);if(typeof hymnIsVisible!=='function'||hymnIsVisible('sacrament'))hymn(p,'Sacrament Hymn',data.sacrament,279,31,hymnRightText('sacrament'));text(p,'Administration of the Sacrament',19,314,11.5);rule(p,20,333,272,gold,3);
   // Share the available space between visible program items and closing items.
   const items=[];
   let options=null;try{options=JSON.parse(data.programOptions)}catch{}
@@ -60,11 +60,11 @@ window.makePdf = async function (settings={}) {
     const hymns=typeof readExtraHymns==='function'?readExtraHymns().filter(h=>h.show&&(h.number.trim()||h.name.trim())):[];
     for(let position=0;position<=speakers.length;position++){
       if(position>0){const speaker=speakers[position-1];items.push({kind:'entry',label:speaker.type||'Speaker',value:speaker.name});}
-      for(const hymn of hymns.filter(h=>Math.min(h.after,speakers.length)===position))items.push({kind:'hymn',label:hymn.label||'Hymn',value:hymn.number?'Hymn '+hymn.number+(hymn.name?' · '+hymn.name:''):hymn.name});
+      for(const hymn of hymns.filter(h=>Math.min(h.after,speakers.length)===position))items.push({kind:'hymn',label:hymn.label||'Hymn',rightLabel:hymnRightText(hymn),value:hymn.number?'Hymn '+hymn.number+(hymn.name?' · '+hymn.name:''):hymn.name});
     }
     if(options.showNotes!==false&&options.notes?.trim())items.push({kind:'notes',value:options.notes});
   }else if(data.program?.trim())items.push({kind:'notes',value:data.program});
-  if(data.closing.trim()&&(typeof hymnIsVisible!=='function'||hymnIsVisible('closing')))items.push({kind:'hymn',label:'Closing Hymn',value:data.closing});
+  if(data.closing.trim()&&(typeof hymnIsVisible!=='function'||hymnIsVisible('closing')))items.push({kind:'hymn',label:'Closing Hymn',rightLabel:hymnRightText('closing'),value:data.closing});
   if(data.benediction.trim())items.push({kind:'entry',label:'Benediction',value:data.benediction});
   for(const item of items){
     item.height=item.kind==='entry'?Math.max(15,entryPlan(item.label,item.value).height):item.kind==='notes'?lines(item.value,11.5,270).length*styleSize(13.8):item.kind==='hymn'&&/^(Hymn\s*\S+)\s*[·|/]\s*(.*)$/i.test(item.value)?styleSize(30):styleSize(15);
@@ -75,7 +75,7 @@ window.makePdf = async function (settings={}) {
   let programY=top+gap;
   for(const item of items){
     if(item.kind==='entry')entry(p,item.label,item.value,programY);
-    else if(item.kind==='hymn')hymn(p,item.label,item.value,programY);
+    else if(item.kind==='hymn')hymn(p,item.label,item.value,programY,0,item.rightLabel);
     else if(item.kind==='center'){
       const title=item.value,size=11.5,width=measure(font,clean(title),size),dotWidth=measure(font,'.',size);
       const dots='.'.repeat(Math.max(0,Math.floor((274-width-16)/(2*dotWidth))));
