@@ -30,7 +30,7 @@ defaults.newsOptions='';
 defaults.programOptions='';
 defaults.welcomeNotes='Welcome and Announcements';
 defaults.wardStakeNotes='Ward/Stake Items';
-let data={...defaults};try{data={...defaults,...JSON.parse(localStorage.getItem('ward-bulletin-v1')||'{}')}}catch{}let tab='Meeting';
+let hadSavedDraft=false;let data={...defaults};try{const saved=JSON.parse(localStorage.getItem('ward-bulletin-v1')||'null');if(saved&&typeof saved==='object'){hadSavedDraft=true;data={...defaults,...saved}}}catch{}let tab='Meeting';
 const groups={Meeting:[['ward','Ward / branch name (optional)'],['stake','Stake name'],['digitalProgramUrl','Digital program URL','url'],['date','Meeting date','date'],['programTitle','Program heading (editable)'],['presiding','Presiding'],['conducting','Conducting'],['welcomeNotes','Welcome and Announcements text','textarea'],['wardStakeNotes','Ward/branch / Stake Items text','textarea'],['opening','Opening hymn','hymn'],['invocation','Invocation'],['sacrament','Sacrament hymn','hymn'],['program','Meeting program','program'],['closing','Closing hymn','hymn'],['benediction','Benediction']],'News / Calendar':[['announcements','Announcements','textarea'],['submission','Submission instructions','textarea']],'Ward / Branch':[['leadership','Leadership','ward'],['interviews','Interview instructions','textarea'],['missionaries','Missionaries','ward'],['temple','Temple information','textarea'],['information','Meeting schedule & notes','ward'],['fifthSunday','Fifth Sunday note','textarea']],Cover:[],'Digital Program':[]};
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const meetingDate=()=>new Date(data.date+'T12:00:00');const dateText=()=>meetingDate().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});function status(t){$('#status').textContent=t}const weeklyDraftCache=new Map();let draftDatabase=null,draftSaveSequence=0;
 function persistWeek(){
@@ -39,19 +39,26 @@ function persistWeek(){
  try{localStorage.setItem(key,json);localStorage.setItem('ward-bulletin-v1',json);$('#saved').textContent='Saved on this device';return true;}catch{$('#saved').textContent='Not saved — export draft';status('Device storage is full or unavailable. Export a draft before refreshing so your uploaded images and edits are kept.');return false;}
 }
 async function initializeDraftStorage(){
- if(typeof indexedDB==='undefined')return;
+ if(typeof indexedDB==='undefined'){openUpcomingWeek();return;}
  const editor=$('#editor');editor.inert=true;
  try{
   draftDatabase=await new Promise((resolve,reject)=>{const request=indexedDB.open('bulletin-studio-drafts',1);request.onupgradeneeded=()=>request.result.createObjectStore('drafts');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);request.onblocked=()=>reject(Error('Storage blocked'));});
   const records=await new Promise((resolve,reject)=>{const transaction=draftDatabase.transaction('drafts','readonly'),store=transaction.objectStore('drafts'),keys=store.getAllKeys(),values=store.getAll();transaction.oncomplete=()=>resolve(keys.result.map((key,i)=>[key,values.result[i]]));transaction.onerror=()=>reject(transaction.error);});
   for(const [key,value] of records)weeklyDraftCache.set(key,value);
-  const current=weeklyDraftCache.get('current');if(current&&typeof current==='object')data={...defaults,...current};
+  const current=weeklyDraftCache.get('current');if(current&&typeof current==='object'){hadSavedDraft=true;data={...defaults,...current};}
   else {for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('ward-bulletin-week-')){try{const value=JSON.parse(localStorage.getItem(key));weeklyDraftCache.set(key,value);const transaction=draftDatabase.transaction('drafts','readwrite');transaction.objectStore('drafts').put(value,key);}catch{}}}persistWeek();}
   syncProgram(readProgramOptions());edit();render();
  }catch{draftDatabase=null;status('Image storage is unavailable. Drafts will use browser storage; export a draft as a backup.');}
- finally{editor.inert=false;}
+ finally{openUpcomingWeek();editor.inert=false;}
 }
 
+function upcomingSunday(today=new Date()){const date=new Date(today);date.setHours(12,0,0,0);date.setDate(date.getDate()+(7-date.getDay())%7);return dateKey(date);}
+function openUpcomingWeek(){
+ if((data.programStyle||'sacrament')!=='sacrament'||new URLSearchParams(location.search).has('replace'))return;
+ const today=dateKey(new Date()),target=upcomingSunday();
+ if(!hadSavedDraft){data={...data,date:target,publicationStatus:'draft',publishedBulletinId:''};persistWeek();edit();render();}
+ else if(!data.date||data.date<today)switchWeek(target);
+}
 function save(invalidate=true){if(invalidate)data.publicationStatus='draft';persistWeek();render();}
 function switchWeek(value){
  const date=new Date(value+'T12:00:00');if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||Number.isNaN(date.getTime())||dateKey(date)!==value){status('Choose a valid Week of date.');return;}
@@ -59,7 +66,7 @@ function switchWeek(value){
  if(!persistWeek()){status('This week could not be saved. Export a draft before switching weeks.');return;}
  let stored=null;try{stored=weeklyDraftCache.get('ward-bulletin-week-'+value)||JSON.parse(localStorage.getItem('ward-bulletin-week-'+value)||'null')}catch{}
  if(stored&&typeof stored==='object'&&!Array.isArray(stored)){const clean={};for(const key of Object.keys(defaults))if(typeof stored[key]==='string')clean[key]=stored[key];if(stored.monthBorderColors&&typeof stored.monthBorderColors==='object')clean.monthBorderColors=stored.monthBorderColors;data={...defaults,...clean,date:value};}
- else data={...data,date:value,publicationStatus:'draft'};
+ else data={...data,date:value,publicationStatus:'draft',publishedBulletinId:''};
  syncProgram(readProgramOptions());bulkEditing=false;bulkSelection.clear();bulkUndo=null;expandedEditorSections.clear();expandedAnnouncements.clear();calendarExpanded.clear();save(false);edit();status(stored?'Opened the saved bulletin for '+dateText()+'.':'Started a new draft for '+dateText()+'. Details were copied from the previous week; review them before publishing.');
 }
 let replacementPublication=null;
