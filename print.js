@@ -196,7 +196,7 @@ window.makePdf = async function (settings={}) {
       const gap=1,mode=calendarDayLayouts()[key]?.layout||'stacked',stacked=mode==='stacked'&&iconEvents.length<=4,hasTimes=iconEvents.some(e=>e.calendarText!=='no'&&calendarTime(e.time)),minTimeWidth=Math.max(0,...iconEvents.map(e=>measure(font,e.calendarText==='no'?'':calendarTime(e.time),6.5)));
       const ratios=[];if(mode==='smart')for(const event of iconEvents){const art=event.art,path=String(art).startsWith('data:image/')?art:generalIcons[String(art)]?`assets/icons/${generalIcons[String(art)]}.png`:/^\d+$/.test(String(art))?`assets/art-${art}.png`:`assets/${art}.png`;const info=await calendarArtInfo(path);ratios.push(info.width/info.height);}
       let layout=null;
-      const firstColumn=mode==='side'?iconEvents.length:stacked?1:mode==='smart'?1:Math.ceil(iconEvents.length/4),lastColumn=stacked?1:iconEvents.length;
+      const gridColumns=mode==='smart'&&iconEvents.length<=4?(iconEvents.length===1?1:2):0,firstColumn=gridColumns||(mode==='side'?iconEvents.length:stacked?1:mode==='smart'?1:Math.ceil(iconEvents.length/4)),lastColumn=gridColumns||(stacked?1:iconEvents.length);
       for(let cols=firstColumn;cols<=lastColumn;cols++){
         const rowCount=Math.ceil(iconEvents.length/cols),tileWidth=(bodyWidth-gap*(cols-1))/cols,tileHeight=(iconHeight-gap*(rowCount-1))/rowCount,sideTimes=cols===1&&iconEvents.length>1,timeBand=hasTimes&&!sideTimes?styleSize(9):0,usableWidth=tileWidth-(sideTimes&&hasTimes?minTimeWidth+3:0),usableHeight=tileHeight-timeBand,minSide=Math.min(usableWidth,usableHeight);
         if(tileWidth<minTimeWidth||minSide<(stacked?12:14))continue;
