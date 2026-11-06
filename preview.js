@@ -1,3 +1,4 @@
+let digitalPreviewObjectUrl=null;
 // Render the actual exported PDF, so preview and print share one layout engine.
 import * as pdfjs from './vendor/pdf.min.mjs';
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', import.meta.url).href;
@@ -48,7 +49,7 @@ async function refresh() {
   try {
     if(document.querySelector('#side').value==='digital'){
       const html=await buildDigitalProgram();if(current!==revision)return;
-      const frame=document.createElement('iframe');frame.className='digital-frame';frame.title='Digital program preview';frame.setAttribute('sandbox','allow-popups allow-popups-to-escape-sandbox');frame.srcdoc=html;
+      const frame=document.createElement('iframe');frame.className='digital-frame';frame.title='Digital program preview';frame.setAttribute('sandbox','allow-popups allow-popups-to-escape-sandbox');if(digitalPreviewObjectUrl)URL.revokeObjectURL(digitalPreviewObjectUrl);digitalPreviewObjectUrl=URL.createObjectURL(new Blob([html],{type:'text/html'}));frame.src=digitalPreviewObjectUrl;
       paper.replaceChildren(frame);paper.removeAttribute('data-stale');paper.setAttribute('aria-busy','false');message.textContent=data.publicationStatus==='published'?'Digital program · published week':'Digital program · draft preview';return;
     }
     const pageNumber = Number(document.querySelector('#side').value) + 1;
