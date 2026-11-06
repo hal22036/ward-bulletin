@@ -163,6 +163,7 @@ window.makePdf = async function (settings={}) {
   footer.quoteRows.forEach((line,i)=>centered(p,line,705,footer.quoteTop+i*styleSize(footer.quoteSize)*1.2,283,footer.quoteSize,italic));
   footer.wardRows.forEach((line,i)=>centered(p,line,685,footer.wardTop+i*styleSize(footer.wardSize)*1.2,315,footer.wardSize));
   footer.stakeRows.forEach((line,i)=>centered(p,line,685,footer.stakeTop+i*styleSize(footer.stakeSize)*1.2,315,footer.stakeSize));
+  const digitalCoverHeight=Math.min(612,footer.qrTop-1,Math.max(449,footer.stakeTop+footer.stakeRows.length*styleSize(footer.stakeSize)*1.2+8));
   if(showQr){await picture(p,data.coverQr,823,footer.qrTop,55,55);await picture(p,'assets/scan-me.png',811,footer.qrTop+26,64,47);}
   // Announcements keep their own column and the calendar occupies two panels.
   const a=pages[0];useSection('announcements');rounded(a,10,33,323,559,18);centered(a,'ANNOUNCEMENTS',17,37,309,22,bold);
@@ -242,7 +243,7 @@ window.makePdf = async function (settings={}) {
     const outside=booklet.addPage([792,612]),inside=booklet.addPage([792,612]);
     outside.drawPage(ward,{x:30,y:0,width:336,height:612});outside.drawPage(cover,{x:426,y:0,width:336,height:612});
     inside.drawPage(announcements,{x:30,y:0,width:336,height:612});inside.drawPage(program,{x:426,y:0,width:336,height:612});
-    return {bytes:await booklet.save(),warnings:[...new Set(warnings)]};
+    return {bytes:await booklet.save(),warnings:[...new Set(warnings)],digitalCoverHeight};
   }
-  return {bytes:await doc.save(),warnings:[...new Set(warnings)]};
+  return {bytes:await doc.save(),warnings:[...new Set(warnings)],digitalCoverHeight};
 };

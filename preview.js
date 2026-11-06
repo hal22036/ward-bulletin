@@ -93,7 +93,7 @@ async function buildDigitalSnapshot(){
     const pdf=await task.promise,scale=2.5,sources=[];
     for(let number=1;number<=2;number++){const page=await pdf.getPage(number),viewport=page.getViewport({scale}),canvas=document.createElement('canvas');canvas.width=viewport.width;canvas.height=viewport.height;await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;sources.push(canvas);}
     const panels=info.format==='letter'?[[0,426,336],[1,426,336],[1,30,336],[0,30,336]]:[[1,672,336],[1,0,336],[0,0,336],[0,336,672],[1,336,336]],images=[];
-    for(const [pageIndex,x,width] of panels){const canvas=document.createElement('canvas');canvas.width=Math.round(width*scale);canvas.height=Math.round(612*scale);canvas.getContext('2d').drawImage(sources[pageIndex],Math.round(x*scale),0,canvas.width,canvas.height,0,0,canvas.width,canvas.height);images.push(canvas.toDataURL('image/png'));}
+    for(const [panelIndex,[pageIndex,x,width]] of panels.entries()){const canvas=document.createElement('canvas');canvas.width=Math.round(width*scale);canvas.height=Math.round((panelIndex===0?result.digitalCoverHeight||612:612)*scale);canvas.getContext('2d').drawImage(sources[pageIndex],Math.round(x*scale),0,canvas.width,canvas.height,0,0,canvas.width,canvas.height);images.push(canvas.toDataURL('image/png'));}
     if(snapshot!==JSON.stringify(data))throw Error('The bulletin changed while the digital program was being prepared. Try again.');
     return {images,info};
   }finally{await task.destroy();}
